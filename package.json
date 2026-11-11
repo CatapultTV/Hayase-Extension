@@ -1,6 +1,6 @@
 {
   "name": "catapulttv-hayase-extension",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Standalone multi-source anime torrent extension for Hayase.",
   "type": "module",
   "main": "index.json",
