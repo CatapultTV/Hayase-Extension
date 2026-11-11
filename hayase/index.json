@@ -5,7 +5,7 @@
     "name": "SeaDex",
     "description": "Curated anime releases matched by AniList ID.",
     "id": "catapulttv.hayase.seadex",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "type": "torrent",
     "accuracy": "high",
     "ratio": 0,
@@ -36,7 +36,7 @@
     "name": "Nyaa",
     "description": "Paginated anime torrent searches, including older releases.",
     "id": "catapulttv.hayase.nyaa",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "type": "torrent",
     "accuracy": "low",
     "ratio": 0,
@@ -96,7 +96,7 @@
     "name": "Sukebei Nyaa",
     "description": "Paginated searches on Sukebei Nyaa.",
     "id": "catapulttv.hayase.sukebei",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "type": "torrent",
     "accuracy": "low",
     "ratio": 0,
@@ -156,7 +156,7 @@
     "name": "The Pirate Bay",
     "description": "Anime torrent searches through the apibay.org public API.",
     "id": "catapulttv.hayase.piratebay",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "type": "torrent",
     "accuracy": "low",
     "ratio": 0,
@@ -178,6 +178,37 @@
           "piratebay"
         ],
         "default": "piratebay"
+      }
+    }
+  },
+  {
+    "manifestVersion": 2,
+    "deprecated": false,
+    "name": "SubsPlease",
+    "description": "Trusted weekly anime releases from the SubsPlease API.",
+    "id": "catapulttv.hayase.subsplease",
+    "version": "2.3.0",
+    "type": "torrent",
+    "accuracy": "high",
+    "ratio": 0,
+    "icon": "https://subsplease.org/favicon.ico",
+    "media": "both",
+    "url": "aHR0cHM6Ly9zdWJzcGxlYXNlLm9yZw==",
+    "languages": [
+      "ALL"
+    ],
+    "update": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json",
+    "code": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/hayase/anime-torrents.js",
+    "updatePeers": false,
+    "rateLimit": 2,
+    "options": {
+      "provider": {
+        "type": "select",
+        "description": "Provider used by this extension.",
+        "values": [
+          "subsplease"
+        ],
+        "default": "subsplease"
       }
     }
   }
