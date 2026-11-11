@@ -5,7 +5,7 @@
     "name": "SeaDex",
     "description": "Curated anime releases matched by AniList ID.",
     "id": "catapulttv.hayase.seadex",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "type": "torrent",
     "accuracy": "high",
     "ratio": 0,
@@ -36,7 +36,7 @@
     "name": "Nyaa",
     "description": "Paginated anime torrent searches, including older releases.",
     "id": "catapulttv.hayase.nyaa",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "type": "torrent",
     "accuracy": "low",
     "ratio": 0,
@@ -68,6 +68,25 @@
           "20"
         ],
         "default": "10"
+      },
+      "sort": {
+        "type": "select",
+        "description": "Sort results by swarm size or newest upload.",
+        "values": [
+          "seeders",
+          "date"
+        ],
+        "default": "seeders"
+      },
+      "filter": {
+        "type": "select",
+        "description": "Exclude remakes or restrict to trusted uploaders.",
+        "values": [
+          "0",
+          "1",
+          "2"
+        ],
+        "default": "1"
       }
     }
   },
@@ -77,13 +96,13 @@
     "name": "Sukebei Nyaa",
     "description": "Paginated searches on Sukebei Nyaa.",
     "id": "catapulttv.hayase.sukebei",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "type": "torrent",
     "accuracy": "low",
     "ratio": 0,
     "icon": "https://sukebei.nyaa.si/static/favicon.png",
     "media": "both",
-    "url": "aHR0cHM6Ly9zdWtlYmVpLm55YWEubmV0",
+    "url": "aHR0cHM6Ly9zdWtlYmVpLm55YWEuc2k=",
     "languages": [
       "ALL"
     ],
@@ -109,6 +128,25 @@
           "20"
         ],
         "default": "10"
+      },
+      "sort": {
+        "type": "select",
+        "description": "Sort results by swarm size or newest upload.",
+        "values": [
+          "seeders",
+          "date"
+        ],
+        "default": "seeders"
+      },
+      "filter": {
+        "type": "select",
+        "description": "Exclude remakes or restrict to trusted uploaders.",
+        "values": [
+          "0",
+          "1",
+          "2"
+        ],
+        "default": "1"
       }
     }
   },
@@ -118,7 +156,7 @@
     "name": "The Pirate Bay",
     "description": "Anime torrent searches through the apibay.org public API.",
     "id": "catapulttv.hayase.piratebay",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "type": "torrent",
     "accuracy": "low",
     "ratio": 0,
