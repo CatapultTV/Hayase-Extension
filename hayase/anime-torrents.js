@@ -1,9 +1,9 @@
 const REQUEST_TIMEOUT = 10000
 const SEADEX_BASE_URL = 'https://releases.moe'
 const NYAA_BASE_URL = 'https://nyaa.si'
-const SUKEBEI_BASE_URL = 'https://sukebei.nyaa.net'
+const SUKEBEI_BASE_URL = 'https://sukebei.nyaa.si'
 const APIBAY_BASE_URL = 'https://apibay.org'
-const NYAA_CATEGORY = '1_0'
+const NYAA_CATEGORY = '1_2'
 const SUKEBEI_CATEGORY = '1_1'
 const MAX_TITLE_QUERIES = 3
 const HASH_PATTERN = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i
@@ -38,10 +38,19 @@ function validHash(value) {
   return HASH_PATTERN.test(hash) ? hash : ''
 }
 
-function magnetLink(hash, title = '') {
+const PUBLIC_TRACKERS = [
+  'udp://tracker.opentrackr.org:1337/announce',
+  'udp://open.stealth.si:80/announce',
+  'udp://tracker.torrent.eu.org:451/announce',
+  'udp://exodus.desync.com:6969/announce',
+  'udp://tracker.openbittorrent.com:6969/announce'
+]
+
+function magnetLink(hash, title = '', trackers = PUBLIC_TRACKERS) {
   const exactTopic = hash.length === 64 ? 'urn:btmh:1220' + hash : 'urn:btih:' + hash
   const name = title ? '&dn=' + encodeURIComponent(title) : ''
-  return 'magnet:?xt=' + exactTopic + name
+  const trackerParams = trackers.map((tracker) => '&tr=' + encodeURIComponent(tracker)).join('')
+  return 'magnet:?xt=' + exactTopic + name + trackerParams
 }
 
 function validDate(value) {
@@ -147,12 +156,14 @@ function nyaaQuery(title, query, mode) {
   return parts.join(' ')
 }
 
-function nyaaSearchUrl(base, search, category, filter, page) {
+function nyaaSearchUrl(base, search, category, filter, page, sort = 'seeders') {
   const url = new URL('/', base)
   url.searchParams.set('q', search)
   url.searchParams.set('p', String(page))
   url.searchParams.set('c', category)
   url.searchParams.set('f', filter)
+  url.searchParams.set('s', sort === 'date' ? 'id' : 'seeders')
+  url.searchParams.set('o', 'desc')
   return url.href
 }
 
@@ -202,6 +213,9 @@ function parseNyaaHtml(html, mode, query = {}) {
     const timestamp = Number(attribute(dateCell, 'data-timestamp'))
     const dateTitle = attribute(dateCell, 'title')
     const date = timestamp > 0 ? new Date(timestamp * 1000) : validDate(dateTitle || stripHtml(dateCell))
+    const rowMarkup = row.toLowerCase()
+    const trusted = /trusted|fa-check-circle|fa-check text-success|text-success.*fa-check/.test(rowMarkup)
+    const remake = /remake|fa-star/.test(rowMarkup)
     const result = {
       title,
       link: magnet,
@@ -211,7 +225,9 @@ function parseNyaaHtml(html, mode, query = {}) {
       downloads: integer(stripHtml(cells[7])),
       size: bytes(stripHtml(cells[3])),
       date,
-      accuracy: 'low'
+      accuracy: trusted ? 'medium' : 'low',
+      _trusted: trusted,
+      _remake: remake
     }
     if (viewId) result.id = Number(viewId)
     if (mode === 'batch') result.type = 'batch'
@@ -272,14 +288,15 @@ async function searchNyaaSite(query = {}, mode, options = {}, config = {}) {
   const fetcher = getFetcher(query)
   const base = config.base || NYAA_BASE_URL
   const category = config.category || NYAA_CATEGORY
-  const filter = String(options.filter ?? '0')
+  const filter = ['0', '1', '2'].includes(String(options.filter)) ? String(options.filter) : '1'
+  const sort = options.sort === 'date' ? 'date' : 'seeders'
   const pages = Math.max(1, Math.min(20, integer(options.pages) || 10))
   const results = new Map()
 
   for (const title of titles) {
     const searchTerm = nyaaQuery(title, query, mode)
     for (let page = 1; page <= pages; page++) {
-      const response = await request(fetcher, nyaaSearchUrl(base, searchTerm, category, filter, page))
+      const response = await request(fetcher, nyaaSearchUrl(base, searchTerm, category, filter, page, sort))
       if (!response?.ok || typeof response.text !== 'function') break
       try {
         const html = await response.text()
@@ -455,28 +472,77 @@ const providers = {
   piratebay: { search: searchPirateBay }
 }
 
-function mergeResults(results) {
+function resultResolutionRank(title, preferred) {
+  const text = String(title).toLowerCase()
+  const match = text.match(/\\b(2160|1080|720|540|480)p?\\b|\\b\\d{3,4}x(2160|1080|720|540|480)\\b/)
+  const resolution = match ? (match[1] || match[2]) : ''
+  if (preferred) return resolution === String(preferred).replace(/p$/i, '') ? 2 : resolution ? 0 : 1
+  return ({ '2160': 5, '1080': 4, '720': 3, '540': 2, '480': 1 })[resolution] || 0
+}
+
+function releaseQualityRank(title) {
+  const text = String(title).toLowerCase()
+  if (/\\b(remux|blu.?ray|bdremux|bdrip|bd rip)\\b/.test(text)) return 5
+  if (/\\b(web.?dl|webdl)\\b/.test(text)) return 4
+  if (/\\b(web.?rip|webrip)\\b/.test(text)) return 3
+  if (/\\b(hdtv)\\b/.test(text)) return 2
+  return 1
+}
+
+function compareResults(a, b, preferredResolution = '') {
+  const aBest = a.type === 'best' ? 1 : 0
+  const bBest = b.type === 'best' ? 1 : 0
+  if (aBest !== bBest) return bBest - aBest
+
+  const aTrusted = a._trusted ? 1 : 0
+  const bTrusted = b._trusted ? 1 : 0
+  if (aTrusted !== bTrusted) return bTrusted - aTrusted
+
+  const aRemake = a._remake ? 1 : 0
+  const bRemake = b._remake ? 1 : 0
+  if (aRemake !== bRemake) return aRemake - bRemake
+
+  const resolution = resultResolutionRank(b.title, preferredResolution) - resultResolutionRank(a.title, preferredResolution)
+  if (resolution) return resolution
+
+  const quality = releaseQualityRank(b.title) - releaseQualityRank(a.title)
+  if (quality) return quality
+
+  const seeders = (Number(b.seeders) || 0) - (Number(a.seeders) || 0)
+  if (seeders) return seeders
+
+  return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0)
+}
+
+function mergeResults(results, preferredResolution = '') {
   const merged = new Map()
   for (const result of results) {
+    if (!result?.hash) continue
     const existing = merged.get(result.hash)
     if (!existing) {
       merged.set(result.hash, { ...result })
       continue
     }
-    if (!existing.title.startsWith('[SeaDex]') && result.title.startsWith('[SeaDex]')) {
-      existing.title = result.title
-    } else if (existing.title.startsWith('[SeaDex]') && !existing.title.includes('+ Nyaa')) {
-      existing.title = existing.title.replace('[SeaDex]', '[SeaDex + Nyaa]')
-    }
-    if (existing.link === existing.hash && result.link !== existing.hash) existing.link = result.link
+    const preferred = compareResults(result, existing, preferredResolution) < 0 ? result : existing
+    const other = preferred === result ? existing : result
+    const combined = { ...other, ...preferred }
     for (const field of ['seeders', 'leechers', 'downloads', 'size']) {
-      if (!existing[field] && result[field]) existing[field] = result[field]
+      combined[field] = Math.max(Number(existing[field]) || 0, Number(result[field]) || 0)
     }
-    if (+existing.date === 0 && +result.date !== 0) existing.date = result.date
-    if (existing.id === undefined && result.id !== undefined) existing.id = result.id
-    if (existing.type === undefined) existing.type = result.type
+    combined._trusted = Boolean(existing._trusted || result._trusted)
+    combined._remake = Boolean(existing._remake && result._remake)
+    if (!combined.date || +combined.date === 0) combined.date = other.date
+    merged.set(result.hash, combined)
   }
+
   return [...merged.values()]
+    .sort((a, b) => compareResults(a, b, preferredResolution))
+    .map((result) => {
+      const clean = { ...result }
+      delete clean._trusted
+      delete clean._remake
+      return clean
+    })
 }
 
 async function search(query = {}, mode, options = {}) {
@@ -487,7 +553,7 @@ async function search(query = {}, mode, options = {}) {
   for (const result of settled) {
     if (result.status === 'fulfilled') results.push(...result.value)
   }
-  return mergeResults(results)
+  return mergeResults(results, query.resolution || '')
 }
 
 async function providerAvailable(fetcher, url, parse) {
