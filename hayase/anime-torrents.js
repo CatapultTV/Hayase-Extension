@@ -4,7 +4,7 @@ const NYAA_BASE_URL = 'https://nyaa.si'
 const SUKEBEI_BASE_URL = 'https://sukebei.nyaa.si'
 const APIBAY_BASE_URL = 'https://apibay.org'
 const NYAA_CATEGORY = '1_0'
-const SUKEBEI_CATEGORY = '1_1'
+const SUKEBEI_CATEGORY = '0_0'
 const MAX_TITLE_QUERIES = 3
 const HASH_PATTERN = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i
 
@@ -273,7 +273,7 @@ async function searchNyaaSite(query = {}, mode, options = {}, config = {}) {
   const base = config.base || NYAA_BASE_URL
   const category = config.category || NYAA_CATEGORY
   const filter = String(options.filter ?? '0')
-  const pages = Math.max(1, Math.min(20, integer(options.pages) || 5))
+  const pages = Math.max(1, Math.min(20, integer(options.pages) || 10))
   const results = new Map()
 
   for (const title of titles) {
@@ -283,8 +283,8 @@ async function searchNyaaSite(query = {}, mode, options = {}, config = {}) {
       if (!response?.ok || typeof response.text !== 'function') break
       try {
         const html = await response.text()
+        if (!/<tr\\b/i.test(html)) break
         const pageResults = parseNyaaHtml(html, mode, query)
-        if (!pageResults.length) break
         for (const result of pageResults) {
           if (!results.has(result.hash)) results.set(result.hash, result)
         }
