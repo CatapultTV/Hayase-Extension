@@ -52,8 +52,8 @@ export const EXTENSIONS = [
     description: 'Paginated searches on Sukebei Nyaa.',
     id: 'catapulttv.hayase.sukebei',
     accuracy: 'low',
-    icon: 'https://sukebei.nyaa.si/static/favicon.png',
-    url: 'aHR0cHM6Ly9zdWtlYmVpLm55YWEuc2k=',
+    icon: 'https://sukebei.nyaa.net/static/favicon.png',
+    url: 'aHR0cHM6Ly9zdWtlYmVpLm55YWEubmV0',
     options: {
       provider: { type: 'select', description: 'Provider used by this extension.', values: ['sukebei'], default: 'sukebei' },
       pages: { type: 'select', description: 'Maximum search pages to scan for older releases.', values: ['5', '10', '20'], default: '10' }
