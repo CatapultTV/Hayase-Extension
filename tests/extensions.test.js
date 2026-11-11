@@ -52,6 +52,9 @@ function mockedFetch({ failNyaa = false, failSukebei = false, failSeaDex = false
       if (failSeaDex) throw new Error('SeaDex unavailable')
       return { ok: true, json: async () => seadexPayload, url }
     }
+    if (url.startsWith('https://subsplease.org/api/')) {
+      return { ok: true, text: async () => JSON.stringify({ one: { show: 'One Piece', episode: '04', downloads: [{ res: '1080', magnet: 'magnet:?xt=urn:btih:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' }], release_date: '2026-11-10T12:00:00Z' } }), url }
+    }
     if (url.startsWith('https://apibay.org')) {
       if (failPirateBay) throw new Error('Pirate Bay API unavailable')
       return { ok: true, json: async () => [{ id: '1', name: 'One Piece - 04 [1080p]', info_hash: HASH_EPISODE, seeders: '8', leechers: '2', size: '1000', added: '1400000000' }], url }
@@ -144,9 +147,24 @@ test('Provider selection only queries the configured site', async () => {
   await source.single({ ...query, titles: ['One Piece'], fetch: sukebeiMock.fetch }, { provider: 'sukebei', pages: '1' })
   assert.ok(sukebeiMock.calls.every((url) => url.startsWith('https://sukebei.nyaa.si/')))
 
+  const subsPleaseMock = mockedFetch()
+  await source.single({ ...query, titles: ['One Piece'], fetch: subsPleaseMock.fetch }, { provider: 'subsplease' })
+  assert.ok(subsPleaseMock.calls.every((url) => url.startsWith('https://subsplease.org/api/')))
+
   const pirateBayMock = mockedFetch()
   await source.single({ ...query, titles: ['One Piece'], fetch: pirateBayMock.fetch }, { provider: 'piratebay' })
   assert.ok(pirateBayMock.calls.every((url) => url.startsWith('https://apibay.org/')))
+})
+
+
+test('SubsPlease parses its curated API and converts base32 hashes', async () => {
+  const { fetch } = mockedFetch()
+  const results = await __testing.providers.subsplease.search({ ...query, fetch }, 'single')
+  assert.equal(results.length, 1)
+  assert.equal(results[0].hash, '0'.repeat(40))
+  assert.equal(results[0].accuracy, 'high')
+  assert.equal(results[0]._trusted, true)
+  assert.match(results[0].title, /SubsPlease.*1080p/)
 })
 
 test('64-character v2 hashes use a BitTorrent v2 magnet topic', () => {
@@ -182,12 +200,13 @@ test('Generated magnets include public trackers for peer discovery', () => {
 test('Generated manifest includes all four providers and pagination settings', async () => {
   const index = buildIndex()
   validateIndex(index)
-  assert.equal(index.length, 4)
+  assert.equal(index.length, 5)
   assert.deepEqual(index.map((entry) => entry.id), [
     'catapulttv.hayase.seadex',
     'catapulttv.hayase.nyaa',
     'catapulttv.hayase.sukebei',
-    'catapulttv.hayase.piratebay'
+    'catapulttv.hayase.piratebay',
+    'catapulttv.hayase.subsplease'
   ])
   assert.equal(index[1].options.pages.default, '10')
   const root = dirname(dirname(fileURLToPath(import.meta.url)))
