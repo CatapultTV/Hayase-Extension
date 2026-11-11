@@ -43,7 +43,9 @@ export const EXTENSIONS = [
     url: 'aHR0cHM6Ly9ueWFhLnNp',
     options: {
       provider: { type: 'select', description: 'Provider used by this extension.', values: ['nyaa'], default: 'nyaa' },
-      pages: { type: 'select', description: 'Maximum search pages to scan for older releases.', values: ['5', '10', '20'], default: '10' }
+      pages: { type: 'select', description: 'Maximum search pages to scan for older releases.', values: ['5', '10', '20'], default: '10' },
+      sort: { type: 'select', description: 'Sort results by swarm size or newest upload.', values: ['seeders', 'date'], default: 'seeders' },
+      filter: { type: 'select', description: 'Nyaa upload filter: exclude remakes or trusted uploaders only.', values: ['0', '1', '2'], default: '1' }
     }
   },
   {
@@ -52,11 +54,13 @@ export const EXTENSIONS = [
     description: 'Paginated searches on Sukebei Nyaa.',
     id: 'catapulttv.hayase.sukebei',
     accuracy: 'low',
-    icon: 'https://sukebei.nyaa.net/static/favicon.png',
-    url: 'aHR0cHM6Ly9zdWtlYmVpLm55YWEubmV0',
+    icon: 'https://sukebei.nyaa.si/static/favicon.png',
+    url: 'aHR0cHM6Ly9zdWtlYmVpLm55YWEuc2k=',
     options: {
       provider: { type: 'select', description: 'Provider used by this extension.', values: ['sukebei'], default: 'sukebei' },
-      pages: { type: 'select', description: 'Maximum search pages to scan for older releases.', values: ['5', '10', '20'], default: '10' }
+      pages: { type: 'select', description: 'Maximum search pages to scan for older releases.', values: ['5', '10', '20'], default: '10' },
+      sort: { type: 'select', description: 'Sort results by swarm size or newest upload.', values: ['seeders', 'date'], default: 'seeders' },
+      filter: { type: 'select', description: 'Sukebei upload filter: exclude remakes or trusted uploaders only.', values: ['0', '1', '2'], default: '1' }
     }
   },
   {
