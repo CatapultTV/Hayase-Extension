@@ -72,8 +72,7 @@ export const EXTENSIONS = [
     icon: 'https://thepiratebay.org/favicon.ico',
     url: 'aHR0cHM6Ly9hcGliYXkub3Jn',
     options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['piratebay'], default: 'piratebay' } }
-  }
-  ,
+  },
   {
     ...shared,
     name: 'SubsPlease',
