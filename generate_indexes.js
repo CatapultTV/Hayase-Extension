@@ -126,8 +126,7 @@ export async function generateIndexes(repositoryRoot = dirname(fileURLToPath(imp
 }
 
 async function writeJson(file, value) {
-  await writeFile(file, JSON.stringify(value, null, 2) + '
-', 'utf8')
+  await writeFile(file, JSON.stringify(value, null, 2) + '\n', 'utf8')
 }
 
 const entryPoint = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
