@@ -1,108 +1,184 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { readFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import source, { __testing } from '../hayase/anime-torrents.js'
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)))
-const hayaseNyaa = (await import(pathToFileURL(join(root, 'hayase', 'nyaa.js')))).default
-const hayaseSukebei = (await import(pathToFileURL(join(root, 'hayase', 'sukebei.js')))).default
-const shiruNyaa = (await import(pathToFileURL(join(root, 'shiru', 'sources', 'nyaasrc', 'index.js')))).default
-const shiruSukebei = (await import(pathToFileURL(join(root, 'shiru', 'sources', 'sukebeisrc', 'index.js')))).default
+const HASH_EPISODE = 'abcdefabcdefabcdefabcdefabcdefabcdefabcd'
+const HASH_BATCH = '1234567890123456789012345678901234567890'
+const HASH_MOVIE = 'fedcbafedcbafedcbafedcbafedcbafedcbafedc'
 
-const feed = `<?xml version="1.0"?>
+const rss = `<?xml version="1.0"?>
 <rss xmlns:nyaa="https://nyaa.si/xmlns/nyaa" version="2.0"><channel>
   <item>
-    <title>[Group] One Piece - 04 [1080p] &amp; More</title>
+    <title>[Group] One Piece - 04 [1080p]</title>
     <link>https://nyaa.si/download/123.torrent</link>
     <guid>https://nyaa.si/view/123</guid>
     <pubDate>Tue, 10 Nov 2026 20:40:16 -0000</pubDate>
     <nyaa:seeders>12</nyaa:seeders><nyaa:leechers>3</nyaa:leechers><nyaa:downloads>45</nyaa:downloads>
-    <nyaa:infoHash>ABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCD</nyaa:infoHash>
+    <nyaa:infoHash>${HASH_EPISODE.toUpperCase()}</nyaa:infoHash>
     <nyaa:size>1.5 GiB</nyaa:size>
   </item>
   <item>
-    <title>[Group] One Piece 01-12 [BATCH]</title>
+    <title>[Group] One Piece 01-12 [BATCH] [1080p]</title>
     <link>https://nyaa.si/download/456.torrent</link>
     <guid>https://nyaa.si/view/456</guid>
     <pubDate>Tue, 10 Nov 2026 20:40:16 -0000</pubDate>
     <nyaa:seeders>0</nyaa:seeders><nyaa:leechers>0</nyaa:leechers><nyaa:downloads>0</nyaa:downloads>
-    <nyaa:infoHash>1234567890123456789012345678901234567890</nyaa:infoHash>
+    <nyaa:infoHash>${HASH_BATCH}</nyaa:infoHash>
     <nyaa:size>not available</nyaa:size>
   </item>
-  <item><title>Missing hash</title><link>https://nyaa.si/download/missing.torrent</link></item>
+  <item>
+    <title>[Group] One Piece Film Red [1080p]</title>
+    <link>https://nyaa.si/download/789.torrent</link>
+    <guid>https://nyaa.si/view/789</guid>
+    <pubDate>Tue, 10 Nov 2026 20:40:16 -0000</pubDate>
+    <nyaa:seeders>5</nyaa:seeders><nyaa:leechers>1</nyaa:leechers><nyaa:downloads>20</nyaa:downloads>
+    <nyaa:infoHash>${HASH_MOVIE}</nyaa:infoHash>
+    <nyaa:size>900 MiB</nyaa:size>
+  </item>
 </channel></rss>`
 
-function mockedFetch (body = feed, ok = true) {
+const seadexPayload = {
+  items: [{
+    alID: 12345,
+    expand: {
+      trs: [
+        {
+          infoHash: HASH_EPISODE,
+          isBest: true,
+          releaseGroup: 'CuratedGroup',
+          created: '2026-11-10T12:00:00Z',
+          files: [{ name: 'One Piece - 04 [1080p].mkv', length: 1000 }]
+        },
+        {
+          infoHash: HASH_BATCH,
+          isBest: false,
+          releaseGroup: 'BatchGroup',
+          created: '2026-11-09T12:00:00Z',
+          files: [
+            { name: 'One Piece - 01.mkv', length: 1000 },
+            { name: 'One Piece - 02.mkv', length: 1000 }
+          ]
+        },
+        {
+          infoHash: '<redacted>',
+          isBest: false,
+          files: [{ name: 'Private release.mkv', length: 1000 }]
+        }
+      ]
+    }
+  }]
+}
+
+function mockedFetch({ failNyaa = false, failSeaDex = false } = {}) {
   const calls = []
-  const fetcher = async (url) => {
-    calls.push(String(url))
-    return { ok, text: async () => body }
+  const fetch = async (input) => {
+    const url = String(input)
+    calls.push(url)
+    if (url.startsWith('https://releases.moe')) {
+      if (failSeaDex) throw new Error('SeaDex unavailable')
+      return { ok: true, json: async () => seadexPayload, url }
+    }
+    if (failNyaa) throw new Error('Nyaa unavailable')
+    return { ok: true, text: async () => rss, url }
   }
-  return { calls, fetcher }
+  return { calls, fetch }
 }
 
-function query (titles = ['One Piece']) {
-  return { titles, episode: 4, resolution: '1080', exclusions: [] }
+const query = {
+  titles: ['One Piece', 'ワンピース'],
+  anilistId: 12345,
+  episode: 4,
+  episodeCount: 12,
+  resolution: '1080',
+  exclusions: []
 }
 
-test('Hayase Nyaa uses alternative titles, episode terms, and preserves RSS metadata', async () => {
-  const { calls, fetcher } = mockedFetch()
-  const results = await hayaseNyaa.single({ ...query(['Missing title', 'One Piece']), fetch: fetcher })
+test('SeaDex URL uses the releases.moe API and exact AniList filter', () => {
+  const url = new URL(__testing.seaDexUrl(12345))
+  assert.equal(url.origin, 'https://releases.moe')
+  assert.equal(url.searchParams.get('filter'), 'alID="12345"')
+  assert.equal(url.searchParams.get('expand'), 'trs')
+  assert.equal(url.searchParams.get('perPage'), '1')
+})
 
+test('Nyaa single results match the requested episode and preserve RSS metadata', async () => {
+  const { calls, fetch } = mockedFetch()
+  const results = await __testing.providers.nyaa.search({ ...query, fetch }, 'single')
   assert.equal(calls.length, 2)
-  assert.match(calls[1], /q=One\+Piece\+04\+1080p/)
-  assert.equal(results.length, 2)
-  assert.equal(results[0].title, '[Group] One Piece - 04 [1080p] & More')
-  assert.equal(results[0].hash, 'abcdefabcdefabcdefabcdefabcdefabcdefabcd')
+  assert.ok(calls[0].includes('q=One+Piece+04+1080p'))
+  assert.equal(results.length, 1)
+  assert.equal(results[0].hash, HASH_EPISODE)
   assert.equal(results[0].id, 123)
+  assert.equal(results[0].link, 'https://nyaa.si/download/123.torrent')
   assert.equal(results[0].size, Math.round(1.5 * 1024 ** 3))
   assert.deepEqual([results[0].seeders, results[0].leechers, results[0].downloads], [12, 3, 45])
   assert.ok(results[0].date instanceof Date)
   assert.equal(results[0].accuracy, 'low')
 })
 
-test('Hayase sources return empty results for empty, failed, or malformed searches', async () => {
-  const failed = mockedFetch('', false)
-  assert.deepEqual(await hayaseNyaa.single({ titles: [], fetch: failed.fetcher }), [])
-  assert.deepEqual(await hayaseNyaa.single({ ...query(), fetch: failed.fetcher }), [])
+test('Nyaa batch and movie modes filter unrelated release types', async () => {
+  const { fetch } = mockedFetch()
+  const batch = await __testing.providers.nyaa.search({ ...query, fetch }, 'batch')
+  assert.equal(batch.length, 1)
+  assert.equal(batch[0].hash, HASH_BATCH)
+  assert.equal(batch[0].type, 'batch')
 
-  const malformed = mockedFetch('<rss><channel><item><title>broken</title></item></channel></rss>')
-  assert.deepEqual(await hayaseSukebei.single({ ...query(), fetch: malformed.fetcher }), [])
-  assert.equal(malformed.calls.length, 1)
+  const movies = await __testing.providers.nyaa.search({ ...query, fetch }, 'movie')
+  assert.equal(movies.length, 1)
+  assert.equal(movies[0].hash, HASH_MOVIE)
 })
 
-test('Shiru sources implement single, batch, movie, and validate with the current interface', async () => {
-  const { fetcher } = mockedFetch()
-  const sources = [shiruNyaa, shiruSukebei]
-  for (const source of sources) {
-    const results = await source.single({ ...query(), fetch: fetcher })
-    assert.equal(results.length, 2)
-    assert.equal(results[0].hash.length, 40)
-    assert.equal(results[0].link.endsWith('.torrent'), true)
-
-    const batch = await source.batch({ titles: ['One Piece'], resolution: '', exclusions: [], fetch: fetcher })
-    assert.equal(batch[1].type, 'batch')
-    assert.equal((await source.movie({ titles: ['One Piece'], resolution: '', exclusions: [], fetch: fetcher }))[0].type, undefined)
-  }
+test('SeaDex maps curated releases to magnet links and skips redacted hashes', async () => {
+  const { fetch } = mockedFetch()
+  const results = await __testing.providers.seadex.search({ ...query, fetch }, 'single')
+  assert.equal(results.length, 1)
+  assert.equal(results[0].accuracy, 'high')
+  assert.equal(results[0].type, 'best')
+  assert.equal(results[0].hash, HASH_EPISODE)
+  assert.ok(results[0].link.startsWith('magnet:?xt=urn:btih:' + HASH_EPISODE))
+  assert.equal(results[0].size, 1000)
 })
 
-test('Shiru and Hayase health checks report request failures without throwing', async () => {
-  const originalFetch = globalThis.fetch
-  try {
-    globalThis.fetch = async () => ({ ok: false })
-    assert.equal(await shiruNyaa.validate(), false)
-    assert.equal(await shiruSukebei.validate(), false)
-    assert.equal(await hayaseNyaa.test(), false)
-    assert.equal(await hayaseSukebei.test(), false)
-  } finally {
-    globalThis.fetch = originalFetch
-  }
+test('SeaDex batch mode requires the requested file count when available', async () => {
+  const { fetch } = mockedFetch()
+  const results = await __testing.providers.seadex.search({ ...query, fetch }, 'batch')
+  assert.equal(results.length, 0)
+  const batchQuery = { ...query, episode: undefined, episodeCount: 2, fetch }
+  const batches = await __testing.providers.seadex.search(batchQuery, 'batch')
+  assert.equal(batches.length, 1)
+  assert.equal(batches[0].type, 'batch')
 })
 
-test('generated indexes are valid JSON', async () => {
-  for (const file of ['index.json', 'hayase/index.json', 'shiru/index.json']) {
-    const value = JSON.parse(await readFile(join(root, file), 'utf8'))
-    assert.ok(Array.isArray(value))
-  }
+test('Combined search keeps one provider working when the other fails', async () => {
+  const nyaaDown = mockedFetch({ failNyaa: true })
+  const seaDexOnly = await source.single({ ...query, fetch: nyaaDown.fetch })
+  assert.equal(seaDexOnly.length, 1)
+  assert.equal(seaDexOnly[0].accuracy, 'high')
+
+  const seaDexDown = mockedFetch({ failSeaDex: true })
+  const nyaaOnly = await source.single({ ...query, fetch: seaDexDown.fetch })
+  assert.equal(nyaaOnly.length, 1)
+  assert.equal(nyaaOnly[0].accuracy, 'low')
+})
+
+test('Duplicate info hashes are merged into a single curated result', () => {
+  const merged = __testing.mergeResults([
+    { title: '[SeaDex] Curated release', hash: HASH_EPISODE, link: 'magnet', seeders: 0, date: new Date(0) },
+    { title: '[Group] Nyaa release', hash: HASH_EPISODE, link: 'https://nyaa.si/download/123.torrent', seeders: 10, date: new Date() }
+  ])
+  assert.equal(merged.length, 1)
+  assert.match(merged[0].title, /SeaDex/)
+  assert.equal(merged[0].seeders, 10)
+  assert.equal(merged[0].link, 'magnet')
+})
+
+test('Empty queries and malformed or failed provider responses return no results', async () => {
+  assert.deepEqual(await source.single({ titles: [] }), [])
+  assert.deepEqual(await source.single({ titles: ['One Piece'], fetch: async () => ({ ok: false }) }), [])
+})
+
+test('64-character v2 hashes use a BitTorrent v2 magnet topic', () => {
+  const hash = 'a'.repeat(64)
+  const merged = __testing.mergeResults([{ title: 'v2', hash, link: 'magnet:?xt=urn:btmh:1220' + hash }])
+  assert.equal(merged[0].link, 'magnet:?xt=urn:btmh:1220' + hash)
 })
