@@ -1,55 +1,75 @@
 # CatapultTV Hayase Extensions
 
-Standalone, community-maintained torrent extensions for [Hayase](https://hayase.watch). This repository provides separate SeaDex and Nyaa entries, each scoped to its own upstream domain for Hayase's CORS configuration.
+Standalone community-maintained torrent extensions for [Hayase](https://hayase.watch). Each provider is a separate installable entry, so you can enable only the sources you want.
 
-This is an independent CatapultTV project. It is not a fork or package for ReWelp or Shiru.
+This is an independent CatapultTV project, not a ReWelp or Shiru fork.
 
 ## Install
 
-In Hayase, open **Settings → Extensions → Repositories**, add this repository manifest, then import the extensions:
+In Hayase, add this repository manifest:
 
 ```
 https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json
 ```
 
-Two entries will be available to enable independently:
+Available providers:
 
-- **SeaDex** — curated releases matched using AniList IDs.
-- **Nyaa** — title-based searches through the public Nyaa RSS feed.
+- **SeaDex** — curated anime releases matched by AniList ID.
+- **Nyaa** — anime torrent searches with HTML pagination, so older results can be reached.
+- **Sukebei Nyaa** — separate paginated searches on Sukebei.
+- **The Pirate Bay** — title searches through the public apibay.org API.
 
-## Sources
+## Finding older torrents
+
+Nyaa's RSS feed is limited to a small set of recent results. The Nyaa and Sukebei extensions now use their paginated search pages instead.
+
+Open the provider's extension options and set **Maximum search pages**:
+
+- 5 pages — quicker searches
+- 10 pages — default
+- 20 pages — searches further back through the site's result pages
+
+The search stops early when the site returns an empty page. Results are deduplicated by info hash.
+
+Pagination follows the provider's own search ordering. It can reach older indexed results, but it cannot guarantee a torrent will still be seeded, available, or indexed by the site.
+
+## Provider details
 
 ### SeaDex
 
 - Looks up curated releases through the releases.moe API using the AniList ID supplied by Hayase.
-- Preserves SeaDex's best-release and alternative-release classifications.
+- Preserves best-release and alternative-release classifications.
 - Skips redacted/private entries and invalid info hashes.
-- Creates standard BitTorrent magnet URIs from published info hashes, including v2 hashes.
-- Returns curated results with high matching accuracy.
-- Does not invent live seed, leech or download counts.
+- Creates BitTorrent magnet URIs from published info hashes.
+- Does not invent live swarm statistics.
 
-### Nyaa
+### Nyaa and Sukebei
 
-- Searches the public Nyaa RSS feed for anime torrents.
-- Uses title alternatives supplied by Hayase.
-- Adds episode, batch or movie search terms where applicable.
+- Searches each site's HTML result pages, rather than relying on the recent-only RSS feed.
+- Supports title alternatives, episode, batch and movie searches.
 - Parses info hashes, upload dates, sizes, seeders, leechers and downloads.
-- Filters exclusions and known resolution tags.
-- Uses low matching accuracy because results are based on text search.
+- Applies exclusions and resolution filters.
+- Uses low matching accuracy because the searches are title-based.
 
-Each manifest selects its provider through a Hayase extension option and declares the corresponding upstream URL for CORS. The entries can be enabled or disabled separately.
+### The Pirate Bay
+
+- Uses the apibay.org public API.
+- Normalises title, hash, seeders, leechers, size and upload date.
+- Filters results using the requested episode/movie/batch mode and resolution where those details are present.
+- Does not claim that a result is verified or currently seeded beyond the returned swarm count.
 
 ## Limitations
 
-- SeaDex needs an AniList ID. If Hayase does not provide one for a title, SeaDex cannot return results.
-- Nyaa's RSS search is text-based and cannot guarantee an exact anime or episode match.
-- SeaDex does not expose live swarm statistics through this integration, so those values are reported as zero rather than guessed.
-- Provider availability, network restrictions and upstream API changes can affect results.
+- SeaDex requires an AniList ID.
+- Nyaa-style search is text-based; matching cannot be guaranteed for every release naming convention.
+- Pirate Bay API availability and category coverage can vary.
+- A result being listed does not guarantee that it is currently downloadable or has active seeders.
+- Provider network restrictions, CORS policies and upstream changes can affect availability.
 - The extension does not bypass provider access controls or private-tracker redactions.
 
 ## Development
 
-Requirements: Node.js 20 or newer. There are no runtime dependencies.
+Requirements: Node.js 20 or newer. No runtime dependencies.
 
 ```sh
 npm run generate
@@ -57,9 +77,7 @@ npm run validate
 npm test
 ```
 
-- `generate` regenerates the root and Hayase manifests from `generate_indexes.js`.
-- `validate` checks JSON, generated-manifest consistency, JavaScript syntax and the standalone repository structure.
-- `test` runs fast local tests with mocked SeaDex and Nyaa responses. It does not launch Hayase or repeatedly query live providers.
+Tests use mocked provider responses. They do not launch Hayase or repeatedly query live torrent sites.
 
 ## Repository layout
 
