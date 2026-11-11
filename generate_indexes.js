@@ -31,31 +31,43 @@ export const EXTENSIONS = [
     accuracy: 'high',
     icon: 'https://seadex.moe/favicon.ico',
     url: 'aHR0cHM6Ly9yZWxlYXNlcy5tb2U=',
-    options: {
-      provider: {
-        type: 'select',
-        description: 'Provider used by this extension.',
-        values: ['seadex'],
-        default: 'seadex'
-      }
-    }
+    options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['seadex'], default: 'seadex' } }
   },
   {
     ...shared,
     name: 'Nyaa',
-    description: 'Anime torrent searches using Nyaa RSS and title alternatives.',
+    description: 'Paginated anime torrent searches, including older releases.',
     id: 'catapulttv.hayase.nyaa',
     accuracy: 'low',
     icon: 'https://nyaa.si/static/favicon.png',
     url: 'aHR0cHM6Ly9ueWFhLnNp',
     options: {
-      provider: {
-        type: 'select',
-        description: 'Provider used by this extension.',
-        values: ['nyaa'],
-        default: 'nyaa'
-      }
+      provider: { type: 'select', description: 'Provider used by this extension.', values: ['nyaa'], default: 'nyaa' },
+      pages: { type: 'select', description: 'Maximum search pages to scan for older releases.', values: ['5', '10', '20'], default: '10' }
     }
+  },
+  {
+    ...shared,
+    name: 'Sukebei Nyaa',
+    description: 'Paginated searches on Sukebei Nyaa.',
+    id: 'catapulttv.hayase.sukebei',
+    accuracy: 'low',
+    icon: 'https://sukebei.nyaa.si/static/favicon.png',
+    url: 'aHR0cHM6Ly9zdWtlYmVpLm55YWEuc2k=',
+    options: {
+      provider: { type: 'select', description: 'Provider used by this extension.', values: ['sukebei'], default: 'sukebei' },
+      pages: { type: 'select', description: 'Maximum search pages to scan for older releases.', values: ['5', '10', '20'], default: '10' }
+    }
+  },
+  {
+    ...shared,
+    name: 'The Pirate Bay',
+    description: 'Anime torrent searches through the apibay.org public API.',
+    id: 'catapulttv.hayase.piratebay',
+    accuracy: 'low',
+    icon: 'https://thepiratebay.org/favicon.ico',
+    url: 'aHR0cHM6Ly9hcGliYXkub3Jn',
+    options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['piratebay'], default: 'piratebay' } }
   }
 ]
 
@@ -65,7 +77,7 @@ export function buildIndex() {
 
 export function validateIndex(index) {
   if (!Array.isArray(index) || index.length !== EXTENSIONS.length) {
-    throw new Error('The Hayase index must contain the SeaDex and Nyaa extensions')
+    throw new Error('The Hayase index must contain all four provider extensions')
   }
 
   const ids = new Set()
@@ -97,9 +109,7 @@ export function validateIndex(index) {
     }
   }
 
-  if (!ids.has('catapulttv.hayase.seadex') || !ids.has('catapulttv.hayase.nyaa')) {
-    throw new Error('Both provider manifests must be present')
-  }
+  for (const id of ['catapulttv.hayase.seadex', 'catapulttv.hayase.nyaa', 'catapulttv.hayase.sukebei', 'catapulttv.hayase.piratebay']) {\n    if (!ids.has(id)) throw new Error('Missing provider manifest: ' + id)\n  }
 }
 
 export async function generateIndexes(repositoryRoot = dirname(fileURLToPath(import.meta.url))) {
