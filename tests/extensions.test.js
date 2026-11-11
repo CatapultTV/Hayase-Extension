@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import source, { __testing } from '../hayase/anime-torrents.js'
+import { buildIndex, validateIndex } from '../generate_indexes.js'
+import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 
 const HASH_EPISODE = 'abcdefabcdefabcdefabcdefabcdefabcdefabcd'
 const HASH_BATCH = '1234567890123456789012345678901234567890'
@@ -149,6 +153,18 @@ test('SeaDex batch mode requires the requested file count when available', async
   assert.equal(batches[0].type, 'batch')
 })
 
+test('Provider-specific manifest options only query their configured upstream', async () => {
+  const nyaaMock = mockedFetch()
+  await source.single({ ...query, fetch: nyaaMock.fetch }, { provider: 'nyaa' })
+  assert.equal(nyaaMock.calls.length, 2)
+  assert.ok(nyaaMock.calls.every((url) => url.startsWith('https://nyaa.si/')))
+
+  const seaDexMock = mockedFetch()
+  await source.single({ ...query, fetch: seaDexMock.fetch }, { provider: 'seadex' })
+  assert.equal(seaDexMock.calls.length, 1)
+  assert.ok(seaDexMock.calls[0].startsWith('https://releases.moe/'))
+})
+
 test('Combined search keeps one provider working when the other fails', async () => {
   const nyaaDown = mockedFetch({ failNyaa: true })
   const seaDexOnly = await source.single({ ...query, fetch: nyaaDown.fetch })
@@ -179,6 +195,19 @@ test('Empty queries and malformed or failed provider responses return no results
 
 test('64-character v2 hashes use a BitTorrent v2 magnet topic', () => {
   const hash = 'a'.repeat(64)
-  const merged = __testing.mergeResults([{ title: 'v2', hash, link: 'magnet:?xt=urn:btmh:1220' + hash }])
-  assert.equal(merged[0].link, 'magnet:?xt=urn:btmh:1220' + hash)
+  assert.equal(__testing.magnetLink(hash), 'magnet:?xt=urn:btmh:1220' + hash)
+})
+
+test('Generated manifests contain separate CORS-scoped provider entries', async () => {
+  const index = buildIndex()
+  validateIndex(index)
+  assert.equal(index.length, 2)
+  assert.equal(index[0].id, 'catapulttv.hayase.seadex')
+  assert.equal(index[0].url, 'aHR0cHM6Ly9yZWxlYXNlcy5tb2U=')
+  assert.equal(index[1].id, 'catapulttv.hayase.nyaa')
+  assert.equal(index[1].url, 'aHR0cHM6Ly9ueWFhLnNp')
+
+  const root = dirname(dirname(fileURLToPath(import.meta.url)))
+  const actual = JSON.parse(await readFile(join(root, 'index.json'), 'utf8'))
+  assert.deepEqual(actual, index)
 })
