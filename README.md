@@ -18,6 +18,7 @@ Available providers:
 - **Nyaa** — paginated anime torrent searches.
 - **Sukebei Nyaa** — paginated anime-category searches on Sukebei.
 - **The Pirate Bay** — title searches through the public apibay.org API.
+- **SubsPlease** — curated weekly releases with high-accuracy episode matching and resolution selection.
 
 ## How results are ranked
 
@@ -67,6 +68,14 @@ The page limit is a maximum; the extension stops when the site returns an empty 
 - Support title alternatives, episode, batch and movie searches.
 - Support remake/trusted upload filters and seeders/newest sorting.
 - Use public tracker fallbacks where a provider's magnet does not already contain them.
+
+### SubsPlease
+
+- Uses the SubsPlease search API for its own catalogue of releases.
+- Matches show titles and exact episode numbers.
+- Selects the requested resolution where available, then falls back to a supported resolution.
+- Converts Base32 BitTorrent hashes to the hexadecimal form expected by Hayase.
+- Does not publish live seeder counts, so Hayase displays those as unavailable rather than fabricated.
 
 ### The Pirate Bay
 
