@@ -56,7 +56,7 @@ function mockedFetch({ failNyaa = false, failSukebei = false, failSeaDex = false
       if (failPirateBay) throw new Error('Pirate Bay API unavailable')
       return { ok: true, json: async () => [{ id: '1', name: 'One Piece - 04 [1080p]', info_hash: HASH_EPISODE, seeders: '8', leechers: '2', size: '1000', added: '1400000000' }], url }
     }
-    if (url.startsWith('https://sukebei.nyaa.net')) {
+    if (url.startsWith('https://sukebei.nyaa.si')) {
       if (failSukebei) throw new Error('Sukebei unavailable')
     } else if (url.startsWith('https://nyaa.si') && failNyaa) {
       throw new Error('Nyaa unavailable')
@@ -110,7 +110,7 @@ test('Sukebei searches its own host and can paginate', async () => {
   const { calls, fetch } = mockedFetch()
   const results = await __testing.providers.sukebei.search({ ...query, titles: ['One Piece'], fetch }, 'single', { pages: 2 })
   assert.equal(results.length, 2)
-  assert.ok(calls.every((url) => url.startsWith('https://sukebei.nyaa.net/')))
+  assert.ok(calls.every((url) => url.startsWith('https://sukebei.nyaa.si/')))
   assert.ok(calls[0].includes('c=1_1'))
 })
 
@@ -142,7 +142,7 @@ test('Provider selection only queries the configured site', async () => {
 
   const sukebeiMock = mockedFetch()
   await source.single({ ...query, titles: ['One Piece'], fetch: sukebeiMock.fetch }, { provider: 'sukebei', pages: '1' })
-  assert.ok(sukebeiMock.calls.every((url) => url.startsWith('https://sukebei.nyaa.net/')))
+  assert.ok(sukebeiMock.calls.every((url) => url.startsWith('https://sukebei.nyaa.si/')))
 
   const pirateBayMock = mockedFetch()
   await source.single({ ...query, titles: ['One Piece'], fetch: pirateBayMock.fetch }, { provider: 'piratebay' })
@@ -152,6 +152,31 @@ test('Provider selection only queries the configured site', async () => {
 test('64-character v2 hashes use a BitTorrent v2 magnet topic', () => {
   const hash = 'a'.repeat(64)
   assert.equal(__testing.magnetLink(hash), 'magnet:?xt=urn:btmh:1220' + hash)
+})
+
+
+test('Nyaa searches are ordered by seeders by default and can be switched to newest', () => {
+  const url = new URL(__testing.nyaaSearchUrl('https://nyaa.si', 'One Piece', '1_2', '1', 2))
+  assert.equal(url.searchParams.get('s'), 'seeders')
+  assert.equal(url.searchParams.get('o'), 'desc')
+  const newest = new URL(__testing.nyaaSearchUrl('https://nyaa.si', 'One Piece', '1_2', '1', 2, 'date'))
+  assert.equal(newest.searchParams.get('s'), 'id')
+})
+
+test('Quality ranking prioritises curated and trusted releases before raw swarm size', () => {
+  const results = __testing.mergeResults([
+    { title: '[Group] One Piece 1080p WEBRip', hash: HASH_EPISODE, seeders: 900, date: new Date('2026-11-10') },
+    { title: '[Group] One Piece 1080p BluRay', hash: HASH_BATCH, seeders: 4, date: new Date('2026-10-10') },
+    { title: '[SeaDex] One Piece 720p', hash: HASH_MOVIE, seeders: 0, type: 'best', date: new Date('2025-01-01') },
+    { title: '[TrustedGroup] One Piece 1080p WEB-DL', hash: HASH_OLD, seeders: 2, _trusted: true, date: new Date('2026-01-01') }
+  ], '1080')
+  assert.deepEqual(results.map((result) => result.hash), [HASH_MOVIE, HASH_OLD, HASH_BATCH, HASH_EPISODE])
+  assert.ok(results.every((result) => !('_trusted' in result) && !('_remake' in result)))
+})
+
+test('Generated magnets include public trackers for peer discovery', () => {
+  const magnet = __testing.magnetLink(HASH_EPISODE, 'Test release')
+  assert.ok(magnet.includes('tr=udp%3A%2F%2Ftracker.opentrackr.org'))
 })
 
 test('Generated manifest includes all four providers and pagination settings', async () => {
