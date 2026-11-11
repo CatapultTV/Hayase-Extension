@@ -165,27 +165,27 @@ function nyaaFeedUrl(search, base = NYAA_BASE_URL, category = NYAA_CATEGORY) {
 }
 
 function stripHtml(value) {
-  return decodeXml(String(value).replace(/<br\\s*\\/?\\s*>/gi, ' ').replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' '))
+  return decodeXml(String(value).replace(/<br\s*\/?\s*>/gi, ' ').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' '))
 }
 
 function attribute(tag, name) {
-  const match = tag.match(new RegExp('\\\\b' + name + '=["\\\\']([^"\\\\']*)["\\\\']', 'i'))
+  const match = tag.match(new RegExp('\\b' + name + '=["\\']([^"\\']*)["\\']', 'i'))
   return match ? decodeXml(match[1]) : ''
 }
 
 function parseNyaaHtml(html, mode, query = {}) {
   const results = []
-  const rows = String(html).match(/<tr\\b[^>]*>[\\s\\S]*?<\\/tr>/gi) ?? []
+  const rows = String(html).match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) ?? []
   for (const row of rows) {
-    const cells = row.match(/<td\\b[^>]*>[\\s\\S]*?<\\/td>/gi) ?? []
+    const cells = row.match(/<td\b[^>]*>[\s\S]*?<\/td>/gi) ?? []
     if (cells.length < 8) continue
 
-    const titleLinks = [...cells[1].matchAll(/<a\\b([^>]*)>([\\s\\S]*?)<\\/a>/gi)]
-    const titleLink = titleLinks.find(([_, attrs]) => /href=["']\\/?view\\//i.test(attrs))
+    const titleLinks = [...cells[1].matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
+    const titleLink = titleLinks.find(([_, attrs]) => /href=["']\/?view\//i.test(attrs))
     if (!titleLink) continue
     const title = stripHtml(titleLink[2])
-    const viewId = attribute(titleLink[0], 'href').match(/\\/view\\/(\\d+)/i)?.[1]
-    const torrentLinks = [...cells[2].matchAll(/<a\\b([^>]*)>/gi)].map((match) => attribute(match[0], 'href'))
+    const viewId = attribute(titleLink[0], 'href').match(/\/view\/(\d+)/i)?.[1]
+    const torrentLinks = [...cells[2].matchAll(/<a\b([^>]*)>/gi)].map((match) => attribute(match[0], 'href'))
     const magnet = torrentLinks.find((link) => link.startsWith('magnet:?')) || ''
     let hash = ''
     try {
