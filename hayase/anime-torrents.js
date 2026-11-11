@@ -3,6 +3,7 @@ const SEADEX_BASE_URL = 'https://releases.moe'
 const NYAA_BASE_URL = 'https://nyaa.si'
 const SUKEBEI_BASE_URL = 'https://sukebei.nyaa.si'
 const APIBAY_BASE_URL = 'https://apibay.org'
+const SUBSPLEASE_BASE_URL = 'https://subsplease.org/api/'
 const NYAA_CATEGORY = '1_2'
 const SUKEBEI_CATEGORY = '1_1'
 const MAX_TITLE_QUERIES = 3
@@ -376,6 +377,116 @@ async function searchPirateBay(query = {}, mode) {
   return [...results.values()]
 }
 
+
+function base32ToHex(value) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+  let bits = 0
+  let buffer = 0
+  const bytes = []
+  for (const character of String(value).toUpperCase()) {
+    const digit = alphabet.indexOf(character)
+    if (digit < 0) continue
+    buffer = (buffer << 5) | digit
+    bits += 5
+    if (bits >= 8) {
+      bits -= 8
+      bytes.push((buffer >>> bits) & 255)
+    }
+  }
+  return bytes.map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function extractMagnetHash(magnet) {
+  const match = String(magnet).match(/[?&]xt=urn:btih:([a-z0-9]+)/i)
+  if (!match) return ''
+  const raw = match[1]
+  if (/^[a-f0-9]{40}$/i.test(raw)) return raw.toLowerCase()
+  if (/^[a-z2-7]{32}$/i.test(raw)) return base32ToHex(raw)
+  return ''
+}
+
+function subsPleaseSearchUrl(title) {
+  const url = new URL(SUBSPLEASE_BASE_URL)
+  url.searchParams.set('f', 'search')
+  url.searchParams.set('tz', 'UTC')
+  url.searchParams.set('s', title)
+  return url.href
+}
+
+function parseSubsPleaseResponse(payload, query, mode) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return []
+  if (mode === 'movie') return []
+  const titles = normaliseTitles(query.titles).map((title) => title.toLowerCase())
+  const output = new Map()
+  const preferred = String(query.resolution || '1080').replace(/p$/i, '')
+  const resolutionOrder = preferred === '480' ? ['480', '720', '1080'] :
+    preferred === '720' || preferred === '540' ? ['720', '1080', '480'] : ['1080', '720', '480']
+
+  for (const item of Object.values(payload)) {
+    if (!item || typeof item !== 'object' || typeof item.show !== 'string') continue
+    const show = item.show.trim()
+    const lowerShow = show.toLowerCase()
+    if (!titles.some((title) => lowerShow.includes(title) || title.includes(lowerShow))) continue
+
+    const isBatch = String(item.episode).toLowerCase() === 'batch'
+    if (mode === 'batch' && !isBatch) continue
+    if (mode === 'single') {
+      if (isBatch) continue
+      const episode = Number(item.episode)
+      if (Number.isFinite(Number(query.episode)) && episode !== Number(query.episode)) continue
+    }
+    if (!Array.isArray(item.downloads)) continue
+
+    let download = item.downloads.find((entry) => String(entry?.res) === preferred)
+    if (!download) {
+      for (const resolution of resolutionOrder) {
+        download = item.downloads.find((entry) => String(entry?.res) === resolution)
+        if (download) break
+      }
+    }
+    if (!download || typeof download.magnet !== 'string') continue
+    const hash = extractMagnetHash(download.magnet)
+    if (!hash || output.has(hash)) continue
+
+    const episode = isBatch ? 'Batch' : String(item.episode || '').padStart(2, '0')
+    const date = validDate(item.release_date || 0)
+    const title = '[SubsPlease] ' + show + (episode ? ' - ' + episode : '') + ' (' + download.res + 'p)'
+    output.set(hash, {
+      title,
+      link: download.magnet,
+      hash,
+      seeders: 0,
+      leechers: 0,
+      downloads: 0,
+      size: 0,
+      date,
+      accuracy: 'high',
+      _trusted: true,
+      ...(isBatch ? { type: 'batch' } : {})
+    })
+  }
+  return [...output.values()]
+}
+
+async function searchSubsPlease(query = {}, mode) {
+  if (mode === 'movie') return []
+  const titles = normaliseTitles(query.titles).slice(0, MAX_TITLE_QUERIES)
+  if (!titles.length) return []
+  const fetcher = getFetcher(query)
+  const results = new Map()
+  for (const title of titles) {
+    const response = await request(fetcher, subsPleaseSearchUrl(title))
+    if (!response?.ok || typeof response.text !== 'function') continue
+    try {
+      const payload = JSON.parse(await response.text())
+      for (const result of parseSubsPleaseResponse(payload, query, mode)) {
+        if (!results.has(result.hash)) results.set(result.hash, result)
+      }
+    } catch {}
+  }
+  return [...results.values()]
+}
+
 function seaDexUrl(anilistId) {
   const url = new URL('/api/collections/entries/records', SEADEX_BASE_URL)
   url.searchParams.set('page', '1')
@@ -469,7 +580,8 @@ const providers = {
   seadex: { search: searchSeaDex },
   nyaa: { search: searchNyaa },
   sukebei: { search: searchSukebei },
-  piratebay: { search: searchPirateBay }
+  piratebay: { search: searchPirateBay },
+  subsplease: { search: searchSubsPlease }
 }
 
 function resultResolutionRank(title, preferred) {
@@ -608,7 +720,7 @@ const source = {
 }
 
 export const __testing = {
-  providers, parseNyaaFeed, parseNyaaHtml, parseApiBayResponse, parseSeaDexResponse, seaDexUrl, nyaaFeedUrl, nyaaSearchUrl, apiBayUrl, magnetLink,
+  providers, parseNyaaFeed, parseNyaaHtml, parseApiBayResponse, parseSeaDexResponse, parseSubsPleaseResponse, seaDexUrl, nyaaFeedUrl, nyaaSearchUrl, apiBayUrl, subsPleaseSearchUrl, magnetLink,
   episodeMatches, isEpisodeTitle, isBatchTitle, resolutionMatches, mergeResults
 }
 
