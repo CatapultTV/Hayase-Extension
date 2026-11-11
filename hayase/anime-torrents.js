@@ -474,7 +474,7 @@ const providers = {
 
 function resultResolutionRank(title, preferred) {
   const text = String(title).toLowerCase()
-  const match = text.match(/\\b(2160|1080|720|540|480)p?\\b|\\b\\d{3,4}x(2160|1080|720|540|480)\\b/)
+  const match = text.match(/\b(2160|1080|720|540|480)p?\b|\b\d{3,4}x(2160|1080|720|540|480)\b/)
   const resolution = match ? (match[1] || match[2]) : ''
   if (preferred) return resolution === String(preferred).replace(/p$/i, '') ? 2 : resolution ? 0 : 1
   return ({ '2160': 5, '1080': 4, '720': 3, '540': 2, '480': 1 })[resolution] || 0
@@ -482,10 +482,10 @@ function resultResolutionRank(title, preferred) {
 
 function releaseQualityRank(title) {
   const text = String(title).toLowerCase()
-  if (/\\b(remux|blu.?ray|bdremux|bdrip|bd rip)\\b/.test(text)) return 5
-  if (/\\b(web.?dl|webdl)\\b/.test(text)) return 4
-  if (/\\b(web.?rip|webrip)\\b/.test(text)) return 3
-  if (/\\b(hdtv)\\b/.test(text)) return 2
+  if (/\b(remux|blu.?ray|bdremux|bdrip|bd rip)\b/.test(text)) return 5
+  if (/\b(web.?dl|webdl)\b/.test(text)) return 4
+  if (/\b(web.?rip|webrip)\b/.test(text)) return 3
+  if (/\b(hdtv)\b/.test(text)) return 2
   return 1
 }
 
@@ -530,7 +530,7 @@ function mergeResults(results, preferredResolution = '') {
       combined[field] = Math.max(Number(existing[field]) || 0, Number(result[field]) || 0)
     }
     combined._trusted = Boolean(existing._trusted || result._trusted)
-    combined._remake = Boolean(existing._remake && result._remake)
+    combined._remake = Boolean(existing._remake || result._remake)
     if (!combined.date || +combined.date === 0) combined.date = other.date
     merged.set(result.hash, combined)
   }
