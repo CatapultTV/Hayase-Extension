@@ -2,21 +2,63 @@
   {
     "manifestVersion": 2,
     "deprecated": false,
-    "name": "CatapultTV Anime Torrents",
-    "description": "Combines SeaDex curated releases with direct Nyaa anime RSS searches.",
-    "id": "catapulttv.hayase.anime-torrents",
+    "name": "SeaDex",
+    "description": "Curated anime releases matched by AniList ID.",
+    "id": "catapulttv.hayase.seadex",
     "version": "2.0.0",
     "type": "torrent",
-    "accuracy": "low",
+    "accuracy": "high",
     "ratio": 0,
     "icon": "https://seadex.moe/favicon.ico",
     "media": "both",
+    "url": "aHR0cHM6Ly9yZWxlYXNlcy5tb2U=",
     "languages": [
       "ALL"
     ],
     "update": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json",
     "code": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/hayase/anime-torrents.js",
     "updatePeers": false,
-    "rateLimit": 2
+    "rateLimit": 2,
+    "options": {
+      "provider": {
+        "type": "select",
+        "description": "Provider used by this extension.",
+        "values": [
+          "seadex"
+        ],
+        "default": "seadex"
+      }
+    }
+  },
+  {
+    "manifestVersion": 2,
+    "deprecated": false,
+    "name": "Nyaa",
+    "description": "Anime torrent searches using Nyaa RSS and title alternatives.",
+    "id": "catapulttv.hayase.nyaa",
+    "version": "2.0.0",
+    "type": "torrent",
+    "accuracy": "low",
+    "ratio": 0,
+    "icon": "https://nyaa.si/static/favicon.png",
+    "media": "both",
+    "url": "aHR0cHM6Ly9ueWFhLnNp",
+    "languages": [
+      "ALL"
+    ],
+    "update": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json",
+    "code": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/hayase/anime-torrents.js",
+    "updatePeers": false,
+    "rateLimit": 2,
+    "options": {
+      "provider": {
+        "type": "select",
+        "description": "Provider used by this extension.",
+        "values": [
+          "nyaa"
+        ],
+        "default": "nyaa"
+      }
+    }
   }
 ]
