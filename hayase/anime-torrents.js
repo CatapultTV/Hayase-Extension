@@ -283,7 +283,7 @@ async function searchNyaaSite(query = {}, mode, options = {}, config = {}) {
       if (!response?.ok || typeof response.text !== 'function') break
       try {
         const html = await response.text()
-        if (!/<tr\\b/i.test(html)) break
+        if (!/<tr\b/i.test(html)) break
         const pageResults = parseNyaaHtml(html, mode, query)
         for (const result of pageResults) {
           if (!results.has(result.hash)) results.set(result.hash, result)
@@ -448,7 +448,12 @@ async function searchSeaDex(query = {}, mode) {
   }
 }
 
-const providers = {\n  seadex: { search: searchSeaDex },\n  nyaa: { search: searchNyaa },\n  sukebei: { search: searchSukebei },\n  piratebay: { search: searchPirateBay }\n}
+const providers = {
+  seadex: { search: searchSeaDex },
+  nyaa: { search: searchNyaa },
+  sukebei: { search: searchSukebei },
+  piratebay: { search: searchPirateBay }
+}
 
 function mergeResults(results) {
   const merged = new Map()
@@ -476,7 +481,8 @@ function mergeResults(results) {
 
 async function search(query = {}, mode, options = {}) {
   const selected = options?.provider
-  const selectedProviders = selected && providers[selected] ? [providers[selected]] : Object.values(providers)\n  const settled = await Promise.allSettled(selectedProviders.map((provider) => provider.search(query, mode, options)))
+  const selectedProviders = selected && providers[selected] ? [providers[selected]] : Object.values(providers)
+  const settled = await Promise.allSettled(selectedProviders.map((provider) => provider.search(query, mode, options)))
   const results = []
   for (const result of settled) {
     if (result.status === 'fulfilled') results.push(...result.value)
@@ -495,7 +501,13 @@ async function providerAvailable(fetcher, url, parse) {
       return false
     }
   }
-  if (parse === 'html') {\n    try {\n      const text = await response.text()\n      return /torrent-list/i.test(text) && /<tbody/i.test(text)\n    } catch { return false }\n  }\n  if (parse === 'rss') {
+  if (parse === 'html') {
+    try {
+      const text = await response.text()
+      return /torrent-list/i.test(text) && /<tbody/i.test(text)
+    } catch { return false }
+  }
+  if (parse === 'rss') {
     try {
       const text = await response.text()
       return /<rss\b/i.test(text) && /<channel\b/i.test(text)
@@ -520,7 +532,9 @@ const source = {
     const fetcher = globalThis.fetch
     const checks = await Promise.all([
       providerAvailable(fetcher, seaDexUrl(1), 'json'),
-      providerAvailable(fetcher, nyaaSearchUrl(NYAA_BASE_URL, 'anime', NYAA_CATEGORY, '0', 1), 'html'),\n      providerAvailable(fetcher, nyaaSearchUrl(SUKEBEI_BASE_URL, 'anime', SUKEBEI_CATEGORY, '0', 1), 'html'),\n      providerAvailable(fetcher, apiBayUrl('anime', 205), 'json')
+      providerAvailable(fetcher, nyaaSearchUrl(NYAA_BASE_URL, 'anime', NYAA_CATEGORY, '0', 1), 'html'),
+      providerAvailable(fetcher, nyaaSearchUrl(SUKEBEI_BASE_URL, 'anime', SUKEBEI_CATEGORY, '0', 1), 'html'),
+      providerAvailable(fetcher, apiBayUrl('anime', 205), 'json')
     ])
     if (!checks.some(Boolean)) throw new Error('SeaDex and Nyaa are currently unreachable.')
     return true
