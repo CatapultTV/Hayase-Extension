@@ -393,7 +393,7 @@ const source = {
 }
 
 export const __testing = {
-  providers, parseNyaaFeed, parseSeaDexResponse, seaDexUrl, nyaaFeedUrl,
+  providers, parseNyaaFeed, parseSeaDexResponse, seaDexUrl, nyaaFeedUrl, magnetLink,
   episodeMatches, isEpisodeTitle, isBatchTitle, resolutionMatches, mergeResults
 }
 
