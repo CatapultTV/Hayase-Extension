@@ -109,7 +109,9 @@ export function validateIndex(index) {
     }
   }
 
-  for (const id of ['catapulttv.hayase.seadex', 'catapulttv.hayase.nyaa', 'catapulttv.hayase.sukebei', 'catapulttv.hayase.piratebay']) {\n    if (!ids.has(id)) throw new Error('Missing provider manifest: ' + id)\n  }
+  for (const id of ['catapulttv.hayase.seadex', 'catapulttv.hayase.nyaa', 'catapulttv.hayase.sukebei', 'catapulttv.hayase.piratebay']) {
+    if (!ids.has(id)) throw new Error('Missing provider manifest: ' + id)
+  }
 }
 
 export async function generateIndexes(repositoryRoot = dirname(fileURLToPath(import.meta.url))) {
@@ -124,7 +126,8 @@ export async function generateIndexes(repositoryRoot = dirname(fileURLToPath(imp
 }
 
 async function writeJson(file, value) {
-  await writeFile(file, JSON.stringify(value, null, 2) + '\n', 'utf8')
+  await writeFile(file, JSON.stringify(value, null, 2) + '
+', 'utf8')
 }
 
 const entryPoint = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
