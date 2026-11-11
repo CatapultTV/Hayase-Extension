@@ -2,7 +2,7 @@
 
 Standalone community-maintained torrent extensions for [Hayase](https://hayase.watch). Each provider is a separate installable entry, so you can enable only the sources you want.
 
-This is an independent CatapultTV project, not a ReWelp or Shiru fork.
+This is an independent CatapultTV project, not a fork of either reference repository.
 
 ## Install
 
@@ -15,23 +15,40 @@ https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json
 Available providers:
 
 - **SeaDex** — curated anime releases matched by AniList ID.
-- **Nyaa** — anime torrent searches with HTML pagination, so older results can be reached.
-- **Sukebei Nyaa Nyaa** — separate paginated searches on Sukebei.
+- **Nyaa** — paginated anime torrent searches.
+- **Sukebei Nyaa** — paginated anime-category searches on Sukebei.
 - **The Pirate Bay** — title searches through the public apibay.org API.
+
+## How results are ranked
+
+The extension no longer treats the largest seeder count as the only measure of quality. Results are deduplicated by info hash and ranked using several signals:
+
+1. SeaDex releases marked **Best** are prioritised.
+2. Nyaa uploads marked as trusted are prioritised over untrusted uploads.
+3. Remakes are demoted.
+4. The requested resolution is preferred when it is known.
+5. Release tags such as Blu-ray, WEB-DL and WEBRip provide a quality hint.
+6. Seeder count breaks ties between otherwise similar results; upload date is the final tie-breaker.
+
+These are ranking signals, not guarantees. Trackers do not provide a universal quality score, and a torrent with many seeders can still be a poor encode or a mismatched release.
+
+Nyaa and Sukebei searches default to the **exclude remakes** filter. You can change the filter to include everything or restrict results to trusted uploads only.
 
 ## Finding older torrents
 
-Nyaa's RSS feed is limited to a small set of recent results. The Nyaa and Sukebei extensions now use their paginated search pages instead.
+Nyaa and Sukebei use paginated search pages rather than relying on their recent-only RSS feeds.
 
-Open the provider's extension options and set **Maximum search pages**:
+Each provider has a **Maximum search pages** setting:
 
 - 5 pages — quicker searches
 - 10 pages — default
-- 20 pages — searches further back through the site's result pages
+- 20 pages — searches further back through the site's indexed results
 
-The search stops early when the site returns an empty page. Results are deduplicated by info hash.
+Their **Sort results** setting lets you choose between:
+- **Seeders** — strongest swarm first, useful for finding active torrents.
+- **Newest** — newest uploads first, useful when browsing further back by date.
 
-Pagination follows the provider's own search ordering. It can reach older indexed results, but it cannot guarantee a torrent will still be seeded, available, or indexed by the site.
+The page limit is a maximum; the extension stops when the site returns an empty or invalid page. Results are deduplicated by info hash.
 
 ## Provider details
 
@@ -40,28 +57,30 @@ Pagination follows the provider's own search ordering. It can reach older indexe
 - Looks up curated releases through the releases.moe API using the AniList ID supplied by Hayase.
 - Preserves best-release and alternative-release classifications.
 - Skips redacted/private entries and invalid info hashes.
-- Creates BitTorrent magnet URIs from published info hashes.
+- Adds public trackers to generated magnet links.
 - Does not invent live swarm statistics.
 
 ### Nyaa and Sukebei
 
-- Searches each site's HTML result pages, rather than relying on the recent-only RSS feed.
-- Supports title alternatives, episode, batch and movie searches.
-- Parses info hashes, upload dates, sizes, seeders, leechers and downloads.
-- Applies exclusions and resolution filters.
-- Uses low matching accuracy because the searches are title-based.
+- Search paginated HTML results and parse torrent hashes, upload dates, sizes, seeders, leechers and downloads.
+- Use the English-translated anime category on Nyaa and the anime category on Sukebei.
+- Support title alternatives, episode, batch and movie searches.
+- Support remake/trusted upload filters and seeders/newest sorting.
+- Use public tracker fallbacks where a provider's magnet does not already contain them.
 
 ### The Pirate Bay
 
 - Uses the apibay.org public API.
 - Normalises title, hash, seeders, leechers, size and upload date.
-- Filters results using the requested episode/movie/batch mode and resolution where those details are present.
-- Does not claim that a result is verified or currently seeded beyond the returned swarm count.
+- Adds public trackers to generated magnet links.
+- Its API has different search and pagination capabilities from Nyaa, so historical coverage is not equivalent.
 
 ## Limitations
 
 - SeaDex requires an AniList ID.
-- Nyaa-style search is text-based; matching cannot be guaranteed for every release naming convention.
+- Nyaa-style title search can miss unusual release naming conventions.
+- Trusted and release-quality indicators are only used when the provider exposes them.
+- Public tracker lists can improve peer discovery but cannot guarantee a healthy swarm.
 - Pirate Bay API availability and category coverage can vary.
 - A result being listed does not guarantee that it is currently downloadable or has active seeders.
 - Provider network restrictions, CORS policies and upstream changes can affect availability.
