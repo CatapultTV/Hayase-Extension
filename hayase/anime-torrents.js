@@ -1,5 +1,5 @@
 const REQUEST_TIMEOUT = 10000
-const SEADEX_BASE_URL = 'https://seadex.moe'
+const SEADEX_BASE_URL = 'https://releases.moe'
 const NYAA_BASE_URL = 'https://nyaa.si'
 const NYAA_CATEGORY = '1_0'
 const HASH_PATTERN = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i
@@ -35,8 +35,9 @@ function validHash(value) {
 }
 
 function magnetLink(hash, title = '') {
+  const exactTopic = hash.length === 64 ? 'urn:btmh:1220' + hash : 'urn:btih:' + hash
   const name = title ? '&dn=' + encodeURIComponent(title) : ''
-  return 'magnet:?xt=urn:btih:' + hash + name
+  return 'magnet:?xt=' + exactTopic + name
 }
 
 function validDate(value) {
@@ -117,6 +118,10 @@ function resolutionMatches(text, resolution) {
   return known.length === 0 || known.some((value) => value === wanted)
 }
 
+function isEpisodeTitle(title) {
+  return /\\bS\\d{1,2}E\\d{1,3}\\b|\\bepisode[ ._-]*\\d{1,3}\\b|\\s-\\s\\d{1,3}(?:v\\d)?(?=\\s|$|\\.|\\[)/i.test(title)
+}
+
 function isBatchTitle(title) {
   if (/\bS\d{1,2}E\d{1,3}\b/i.test(title)) return false
   return /\b(?:batch|complete|season|cour|collection|bd[ ._-]?box)\b|\b\d{1,3}\s*[-–~]\s*\d{1,3}\b|\bS\d{1,2}\b/i.test(title)
@@ -171,6 +176,7 @@ function parseNyaaFeed(xml, mode, query = {}) {
     if (!title || !hash || excluded(title, query.exclusions)) continue
     if (mode === 'single' && !episodeMatches(title, query)) continue
     if (mode === 'batch' && !isBatchTitle(title)) continue
+    if (mode === 'movie' && (isBatchTitle(title) || isEpisodeTitle(title))) continue
     if (!resolutionMatches(title, query.resolution)) continue
 
     const result = {
@@ -384,7 +390,7 @@ const source = {
 
 export const __testing = {
   providers, parseNyaaFeed, parseSeaDexResponse, seaDexUrl, nyaaFeedUrl,
-  episodeMatches, isBatchTitle, resolutionMatches, mergeResults
+  episodeMatches, isEpisodeTitle, isBatchTitle, resolutionMatches, mergeResults
 }
 
 export default source
