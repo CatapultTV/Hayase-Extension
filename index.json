@@ -1,5 +1,22 @@
 [
   {
-    "main": "gh:ReWelp/HayasexShiru-Extensions/shiru"
+    "manifestVersion": 2,
+    "deprecated": false,
+    "name": "CatapultTV Anime Torrents",
+    "description": "Combines SeaDex curated releases with direct Nyaa anime RSS searches.",
+    "id": "catapulttv.hayase.anime-torrents",
+    "version": "2.0.0",
+    "type": "torrent",
+    "accuracy": "low",
+    "ratio": 0,
+    "icon": "https://seadex.moe/favicon.ico",
+    "media": "both",
+    "languages": [
+      "ALL"
+    ],
+    "update": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json",
+    "code": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/hayase/anime-torrents.js",
+    "updatePeers": false,
+    "rateLimit": 2
   }
 ]
