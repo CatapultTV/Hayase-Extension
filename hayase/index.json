@@ -5,7 +5,7 @@
     "name": "SeaDex",
     "description": "Curated anime releases matched by AniList ID.",
     "id": "catapulttv.hayase.seadex",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "type": "torrent",
     "accuracy": "high",
     "ratio": 0,
@@ -34,9 +34,9 @@
     "manifestVersion": 2,
     "deprecated": false,
     "name": "Nyaa",
-    "description": "Anime torrent searches using Nyaa RSS and title alternatives.",
+    "description": "Paginated anime torrent searches, including older releases.",
     "id": "catapulttv.hayase.nyaa",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "type": "torrent",
     "accuracy": "low",
     "ratio": 0,
@@ -58,6 +58,88 @@
           "nyaa"
         ],
         "default": "nyaa"
+      },
+      "pages": {
+        "type": "select",
+        "description": "Maximum search pages to scan for older releases.",
+        "values": [
+          "5",
+          "10",
+          "20"
+        ],
+        "default": "10"
+      }
+    }
+  },
+  {
+    "manifestVersion": 2,
+    "deprecated": false,
+    "name": "Sukebei Nyaa",
+    "description": "Paginated searches on Sukebei Nyaa.",
+    "id": "catapulttv.hayase.sukebei",
+    "version": "2.1.0",
+    "type": "torrent",
+    "accuracy": "low",
+    "ratio": 0,
+    "icon": "https://sukebei.nyaa.si/static/favicon.png",
+    "media": "both",
+    "url": "aHR0cHM6Ly9zdWtlYmVpLm55YWEuc2k=",
+    "languages": [
+      "ALL"
+    ],
+    "update": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json",
+    "code": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/hayase/anime-torrents.js",
+    "updatePeers": false,
+    "rateLimit": 2,
+    "options": {
+      "provider": {
+        "type": "select",
+        "description": "Provider used by this extension.",
+        "values": [
+          "sukebei"
+        ],
+        "default": "sukebei"
+      },
+      "pages": {
+        "type": "select",
+        "description": "Maximum search pages to scan for older releases.",
+        "values": [
+          "5",
+          "10",
+          "20"
+        ],
+        "default": "10"
+      }
+    }
+  },
+  {
+    "manifestVersion": 2,
+    "deprecated": false,
+    "name": "The Pirate Bay",
+    "description": "Anime torrent searches through the apibay.org public API.",
+    "id": "catapulttv.hayase.piratebay",
+    "version": "2.1.0",
+    "type": "torrent",
+    "accuracy": "low",
+    "ratio": 0,
+    "icon": "https://thepiratebay.org/favicon.ico",
+    "media": "both",
+    "url": "aHR0cHM6Ly9hcGliYXkub3Jn",
+    "languages": [
+      "ALL"
+    ],
+    "update": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/index.json",
+    "code": "https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/hayase/anime-torrents.js",
+    "updatePeers": false,
+    "rateLimit": 2,
+    "options": {
+      "provider": {
+        "type": "select",
+        "description": "Provider used by this extension.",
+        "values": [
+          "piratebay"
+        ],
+        "default": "piratebay"
       }
     }
   }
