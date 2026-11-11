@@ -671,10 +671,12 @@ async function search(query = {}, mode, options = {}) {
 async function providerAvailable(fetcher, url, parse) {
   const response = await request(fetcher, url)
   if (!response?.ok) return false
-  if (parse === 'json') {
+  if (parse === 'json' || parse === 'json-object') {
     try {
       const payload = await response.json()
-      return Boolean(payload && Array.isArray(payload.items))
+      return parse === 'json-object'
+        ? Boolean(payload && typeof payload === 'object' && !Array.isArray(payload))
+        : Boolean(payload && Array.isArray(payload.items))
     } catch {
       return false
     }
@@ -713,7 +715,7 @@ const source = {
       providerAvailable(fetcher, nyaaSearchUrl(NYAA_BASE_URL, 'anime', NYAA_CATEGORY, '0', 1), 'html'),
       providerAvailable(fetcher, nyaaSearchUrl(SUKEBEI_BASE_URL, 'anime', SUKEBEI_CATEGORY, '0', 1), 'html'),
       providerAvailable(fetcher, apiBayUrl('anime', 205), 'json'),
-      providerAvailable(fetcher, subsPleaseSearchUrl('anime'), 'json')
+      providerAvailable(fetcher, subsPleaseSearchUrl('anime'), 'json-object')
     ])
     if (!checks.some(Boolean)) throw new Error('SeaDex and Nyaa are currently unreachable.')
     return true
