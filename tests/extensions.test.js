@@ -111,7 +111,7 @@ test('Sukebei searches its own host and can paginate', async () => {
   const results = await __testing.providers.sukebei.search({ ...query, titles: ['One Piece'], fetch }, 'single', { pages: 2 })
   assert.equal(results.length, 2)
   assert.ok(calls.every((url) => url.startsWith('https://sukebei.nyaa.net/')))
-  assert.ok(calls[0].includes('c=0_0'))
+  assert.ok(calls[0].includes('c=1_1'))
 })
 
 test('Pirate Bay API results are normalised and filtered', () => {
