@@ -334,14 +334,18 @@ function mergeResults(results) {
   return [...merged.values()]
 }
 
-async function search(query = {}, mode) {
-  const [seaDex, nyaa] = await Promise.allSettled([
-    providers.seadex.search(query, mode),
-    providers.nyaa.search(query, mode)
-  ])
+async function search(query = {}, mode, options = {}) {
+  const selected = options?.provider
+  const selectedProviders = selected === 'seadex'
+    ? [providers.seadex]
+    : selected === 'nyaa'
+      ? [providers.nyaa]
+      : [providers.seadex, providers.nyaa]
+  const settled = await Promise.allSettled(selectedProviders.map((provider) => provider.search(query, mode)))
   const results = []
-  if (seaDex.status === 'fulfilled') results.push(...seaDex.value)
-  if (nyaa.status === 'fulfilled') results.push(...nyaa.value)
+  for (const result of settled) {
+    if (result.status === 'fulfilled') results.push(...result.value)
+  }
   return mergeResults(results)
 }
 
@@ -368,14 +372,14 @@ async function providerAvailable(fetcher, url, parse) {
 }
 
 const source = {
-  async single(query = {}) {
-    return search(query, 'single')
+  async single(query = {}, options = {}) {
+    return search(query, 'single', options)
   },
-  async batch(query = {}) {
-    return search(query, 'batch')
+  async batch(query = {}, options = {}) {
+    return search(query, 'batch', options)
   },
-  async movie(query = {}) {
-    return search(query, 'movie')
+  async movie(query = {}, options = {}) {
+    return search(query, 'movie', options)
   },
   async test() {
     const fetcher = globalThis.fetch
