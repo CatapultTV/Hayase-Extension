@@ -4,7 +4,7 @@ const NYAA_BASE_URL = 'https://nyaa.si'
 const SUKEBEI_BASE_URL = 'https://sukebei.nyaa.net'
 const APIBAY_BASE_URL = 'https://apibay.org'
 const NYAA_CATEGORY = '1_0'
-const SUKEBEI_CATEGORY = '0_0'
+const SUKEBEI_CATEGORY = '1_1'
 const MAX_TITLE_QUERIES = 3
 const HASH_PATTERN = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i
 
