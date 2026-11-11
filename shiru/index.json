@@ -1,0 +1,28 @@
+[
+  {
+    "id": "nyaasrc",
+    "name": "Nyaa SRC",
+    "version": "1.1.0",
+    "main": "sources/nyaasrc",
+    "update": "gh:ReWelp/HayasexShiru-Extensions/shiru",
+    "type": "torrent",
+    "speed": "moderate",
+    "accuracy": "low",
+    "nsfw": false,
+    "description": "Searches Nyaa anime torrents through its public RSS feed.",
+    "icon": "https://nyaa.si/static/favicon.png"
+  },
+  {
+    "id": "sukebeisrc",
+    "name": "Sukebei SRC",
+    "version": "1.1.0",
+    "main": "sources/sukebeisrc",
+    "update": "gh:ReWelp/HayasexShiru-Extensions/shiru",
+    "type": "torrent",
+    "speed": "moderate",
+    "accuracy": "low",
+    "nsfw": true,
+    "description": "Searches Sukebei torrents through its public RSS feed.",
+    "icon": "https://sukebei.nyaa.si/static/favicon.png"
+  }
+]
