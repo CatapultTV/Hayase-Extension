@@ -73,6 +73,17 @@ export const EXTENSIONS = [
     url: 'aHR0cHM6Ly9hcGliYXkub3Jn',
     options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['piratebay'], default: 'piratebay' } }
   }
+  ,
+  {
+    ...shared,
+    name: 'SubsPlease',
+    description: 'Trusted weekly anime releases from the SubsPlease API.',
+    id: 'catapulttv.hayase.subsplease',
+    accuracy: 'high',
+    icon: 'https://subsplease.org/favicon.ico',
+    url: 'aHR0cHM6Ly9zdWJzcGxlYXNlLm9yZw==',
+    options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['subsplease'], default: 'subsplease' } }
+  }
 ]
 
 export function buildIndex() {
@@ -81,7 +92,7 @@ export function buildIndex() {
 
 export function validateIndex(index) {
   if (!Array.isArray(index) || index.length !== EXTENSIONS.length) {
-    throw new Error('The Hayase index must contain all four provider extensions')
+    throw new Error('The Hayase index must contain all five provider extensions')
   }
 
   const ids = new Set()
@@ -113,7 +124,7 @@ export function validateIndex(index) {
     }
   }
 
-  for (const id of ['catapulttv.hayase.seadex', 'catapulttv.hayase.nyaa', 'catapulttv.hayase.sukebei', 'catapulttv.hayase.piratebay']) {
+  for (const id of ['catapulttv.hayase.seadex', 'catapulttv.hayase.nyaa', 'catapulttv.hayase.sukebei', 'catapulttv.hayase.piratebay', 'catapulttv.hayase.subsplease']) {
     if (!ids.has(id)) throw new Error('Missing provider manifest: ' + id)
   }
 }
