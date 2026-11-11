@@ -56,7 +56,7 @@ function mockedFetch({ failNyaa = false, failSukebei = false, failSeaDex = false
       if (failPirateBay) throw new Error('Pirate Bay API unavailable')
       return { ok: true, json: async () => [{ id: '1', name: 'One Piece - 04 [1080p]', info_hash: HASH_EPISODE, seeders: '8', leechers: '2', size: '1000', added: '1400000000' }], url }
     }
-    if (url.startsWith('https://sukebei.nyaa.si')) {
+    if (url.startsWith('https://sukebei.nyaa.net')) {
       if (failSukebei) throw new Error('Sukebei unavailable')
     } else if (url.startsWith('https://nyaa.si') && failNyaa) {
       throw new Error('Nyaa unavailable')
@@ -110,7 +110,7 @@ test('Sukebei searches its own host and can paginate', async () => {
   const { calls, fetch } = mockedFetch()
   const results = await __testing.providers.sukebei.search({ ...query, titles: ['One Piece'], fetch }, 'single', { pages: 2 })
   assert.equal(results.length, 2)
-  assert.ok(calls.every((url) => url.startsWith('https://sukebei.nyaa.si/')))
+  assert.ok(calls.every((url) => url.startsWith('https://sukebei.nyaa.net/')))
   assert.ok(calls[0].includes('c=0_0'))
 })
 
@@ -142,7 +142,7 @@ test('Provider selection only queries the configured site', async () => {
 
   const sukebeiMock = mockedFetch()
   await source.single({ ...query, titles: ['One Piece'], fetch: sukebeiMock.fetch }, { provider: 'sukebei', pages: '1' })
-  assert.ok(sukebeiMock.calls.every((url) => url.startsWith('https://sukebei.nyaa.si/')))
+  assert.ok(sukebeiMock.calls.every((url) => url.startsWith('https://sukebei.nyaa.net/')))
 
   const pirateBayMock = mockedFetch()
   await source.single({ ...query, titles: ['One Piece'], fetch: pirateBayMock.fetch }, { provider: 'piratebay' })
