@@ -712,7 +712,8 @@ const source = {
       providerAvailable(fetcher, seaDexUrl(1), 'json'),
       providerAvailable(fetcher, nyaaSearchUrl(NYAA_BASE_URL, 'anime', NYAA_CATEGORY, '0', 1), 'html'),
       providerAvailable(fetcher, nyaaSearchUrl(SUKEBEI_BASE_URL, 'anime', SUKEBEI_CATEGORY, '0', 1), 'html'),
-      providerAvailable(fetcher, apiBayUrl('anime', 205), 'json')
+      providerAvailable(fetcher, apiBayUrl('anime', 205), 'json'),
+      providerAvailable(fetcher, subsPleaseSearchUrl('anime'), 'json')
     ])
     if (!checks.some(Boolean)) throw new Error('SeaDex and Nyaa are currently unreachable.')
     return true
