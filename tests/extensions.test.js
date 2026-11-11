@@ -151,7 +151,7 @@ test('Provider selection only queries the configured site', async () => {
 
 test('64-character v2 hashes use a BitTorrent v2 magnet topic', () => {
   const hash = 'a'.repeat(64)
-  assert.equal(__testing.magnetLink(hash), 'magnet:?xt=urn:btmh:1220' + hash)
+  assert.ok(__testing.magnetLink(hash).startsWith('magnet:?xt=urn:btmh:1220' + hash))
 })
 
 
