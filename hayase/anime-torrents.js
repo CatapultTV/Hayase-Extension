@@ -169,8 +169,8 @@ function stripHtml(value) {
 }
 
 function attribute(tag, name) {
-  const match = tag.match(new RegExp('\\b' + name + '=["\\']([^"\\']*)["\\']', 'i'))
-  return match ? decodeXml(match[1]) : ''
+  const match = tag.match(new RegExp("\\b" + name + "=(?:\"([^\"]*)\"|'([^']*)')", "i"))
+  return match ? decodeXml(match[1] ?? match[2]) : ''
 }
 
 function parseNyaaHtml(html, mode, query = {}) {
