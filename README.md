@@ -16,7 +16,7 @@ Available providers:
 
 - **SeaDex** — curated anime releases matched by AniList ID.
 - **Nyaa** — anime torrent searches with HTML pagination, so older results can be reached.
-- **Sukebei Nyaa** — separate paginated searches on Sukebei.
+- **Sukebei Nyaa Nyaa** — separate paginated searches on Sukebei.
 - **The Pirate Bay** — title searches through the public apibay.org API.
 
 ## Finding older torrents
