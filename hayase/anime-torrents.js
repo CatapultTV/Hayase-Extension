@@ -247,7 +247,7 @@ function parseNyaaHtml(html, mode, query = {}) {
       _remake: remake
     }
     if (viewId) result.id = Number(viewId)
-    if (mode === 'batch' && isBatchTitle(title)) result.type = 'batch'
+    if (mode === 'batch' && (files.length > 1 || isBatchTitle(searchableText))) result.type = 'batch'
     results.push(result)
   }
   return results
