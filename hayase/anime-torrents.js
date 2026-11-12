@@ -103,6 +103,24 @@ function normaliseTitles(titles) {
     }).slice(0, 6)
 }
 
+function normaliseMatchText(value) {
+  return String(value ?? '')
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+}
+
+function seriesTitleMatches(releaseTitle, query) {
+  const release = ' ' + normaliseMatchText(releaseTitle) + ' '
+  const aliases = normaliseTitles(query?.titles)
+  if (!aliases.length) return true
+  return aliases.some((alias) => {
+    const candidate = normaliseMatchText(alias)
+    return candidate.length > 0 && release.includes(' ' + candidate + ' ')
+  })
+}
+
 function excluded(text, exclusions) {
   const haystack = String(text).toLocaleLowerCase()
   return (Array.isArray(exclusions) ? exclusions : []).some((value) =>
@@ -204,8 +222,8 @@ function parseNyaaHtml(html, mode, query = {}) {
       const xt = new URL(magnet).searchParams.get('xt') || ''
       hash = validHash(xt.split(':').pop())
     } catch {}
-    if (!title || !hash || excluded(title, query.exclusions)) continue
-    if (mode === 'single' && !episodeMatches(title, query)) continue
+    if (!title || !hash || excluded(title, query.exclusions) || !seriesTitleMatches(title, query)) continue
+    if (mode === 'single' && (isBatchTitle(title) || !episodeMatches(title, query))) continue
     if (mode === 'batch' && !isBatchTitle(title)) continue
     if (mode === 'movie' && (isBatchTitle(title) || isEpisodeTitle(title))) continue
     if (!resolutionMatches(title, query.resolution)) continue
@@ -259,8 +277,8 @@ function parseNyaaFeed(xml, mode, query = {}) {
     const guid = xmlField(item, 'guid')
     const id = Number.parseInt(guid.match(/\/view\/(\d+)/i)?.[1] ?? '', 10)
     const link = directTorrentLink(xmlField(item, 'link'))
-    if (!title || !hash || excluded(title, query.exclusions)) continue
-    if (mode === 'single' && !episodeMatches(title, query)) continue
+    if (!title || !hash || excluded(title, query.exclusions) || !seriesTitleMatches(title, query)) continue
+    if (mode === 'single' && (isBatchTitle(title) || !episodeMatches(title, query))) continue
     if (mode === 'batch' && !isBatchTitle(title)) continue
     if (mode === 'movie' && (isBatchTitle(title) || isEpisodeTitle(title))) continue
     if (!resolutionMatches(title, query.resolution)) continue
@@ -335,8 +353,8 @@ function parseApiBayResponse(payload, mode, query = {}) {
   for (const torrent of payload) {
     const title = typeof torrent?.name === 'string' ? torrent.name.trim() : ''
     const hash = validHash(torrent?.info_hash)
-    if (!title || !hash || String(torrent.id) === '0' || excluded(title, query.exclusions)) continue
-    if (mode === 'single' && !episodeMatches(title, query)) continue
+    if (!title || !hash || String(torrent.id) === '0' || excluded(title, query.exclusions) || !seriesTitleMatches(title, query)) continue
+    if (mode === 'single' && (isBatchTitle(title) || !episodeMatches(title, query))) continue
     if (mode === 'batch' && !isBatchTitle(title)) continue
     if (mode === 'movie' && (isBatchTitle(title) || isEpisodeTitle(title))) continue
     if (!resolutionMatches(title, query.resolution)) continue
@@ -426,7 +444,7 @@ function parseSubsPleaseResponse(payload, query, mode) {
     if (!item || typeof item !== 'object' || typeof item.show !== 'string') continue
     const show = item.show.trim()
     const lowerShow = show.toLowerCase()
-    if (!titles.some((title) => lowerShow.includes(title) || title.includes(lowerShow))) continue
+    if (!seriesTitleMatches(show, query)) continue
 
     const isBatch = String(item.episode).toLowerCase() === 'batch'
     if (mode === 'batch' && !isBatch) continue
@@ -460,7 +478,7 @@ function parseSubsPleaseResponse(payload, query, mode) {
       downloads: 0,
       size: 0,
       date,
-      accuracy: 'high',
+      accuracy: 'medium',
       _trusted: true,
       ...(isBatch ? { type: 'batch' } : {})
     })
@@ -519,9 +537,10 @@ function parseSeaDexTorrent(torrent, query, mode) {
   const searchableText = [torrent.releaseGroup, torrent.tracker, ...fileNames].filter(Boolean).join(' ')
   if (excluded(searchableText, query.exclusions) || !resolutionMatches(searchableText, query.resolution)) return null
 
-  if (mode === 'single' && requestedEpisodes(query).length && files.length) {
-    if (!files.some((file) => episodeMatches(file.name, query))) return null
+  if (mode === 'single' && requestedEpisodes(query).length) {
+    if (!files.length || !files.some((file) => episodeMatches(file.name, query))) return null
   }
+  if (mode === 'movie' && (isBatchTitle(searchableText) || fileNames.some(isEpisodeTitle))) return null
   if (mode === 'batch') {
     const expectedCount = Number(query.episodeCount)
     if (Number.isInteger(expectedCount) && expectedCount > 1 && files.length > 0) {
@@ -594,7 +613,8 @@ function resultResolutionRank(title, preferred) {
 
 function releaseQualityRank(title) {
   const text = String(title).toLowerCase()
-  if (/\b(remux|blu.?ray|bdremux|bdrip|bd rip)\b/.test(text)) return 5
+  if (/\b(remux|bdremux)\b/.test(text)) return 6
+  if (/\b(blu.?ray|bdrip|bd rip)\b/.test(text)) return 5
   if (/\b(web.?dl|webdl)\b/.test(text)) return 4
   if (/\b(web.?rip|webrip)\b/.test(text)) return 3
   if (/\b(hdtv)\b/.test(text)) return 2
@@ -602,9 +622,13 @@ function releaseQualityRank(title) {
 }
 
 function compareResults(a, b, preferredResolution = '') {
-  const aBest = a.type === 'best' ? 1 : 0
-  const bBest = b.type === 'best' ? 1 : 0
-  if (aBest !== bBest) return bBest - aBest
+  const typeRank = (result) => result.type === 'best' ? 2 : result.type === 'alt' ? 1 : 0
+  const typeDifference = typeRank(b) - typeRank(a)
+  if (typeDifference) return typeDifference
+
+  const accuracyRank = (result) => ({ high: 3, medium: 2, low: 1 })[result.accuracy] || 0
+  const accuracyDifference = accuracyRank(b) - accuracyRank(a)
+  if (accuracyDifference) return accuracyDifference
 
   const aTrusted = a._trusted ? 1 : 0
   const bTrusted = b._trusted ? 1 : 0
@@ -724,7 +748,7 @@ const source = {
 
 export const __testing = {
   providers, parseNyaaFeed, parseNyaaHtml, parseApiBayResponse, parseSeaDexResponse, parseSubsPleaseResponse, seaDexUrl, nyaaFeedUrl, nyaaSearchUrl, apiBayUrl, subsPleaseSearchUrl, magnetLink,
-  episodeMatches, isEpisodeTitle, isBatchTitle, resolutionMatches, mergeResults
+  episodeMatches, seriesTitleMatches, isEpisodeTitle, isBatchTitle, resolutionMatches, mergeResults
 }
 
 export default source
