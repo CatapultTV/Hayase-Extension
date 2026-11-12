@@ -29,7 +29,7 @@ export const EXTENSIONS = [
     description: 'Curated anime releases matched by AniList ID.',
     id: 'catapulttv.hayase.seadex',
     accuracy: 'high',
-    icon: 'https://seadex.moe/favicon.ico',
+    icon: 'https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/assets/icons/seadex.svg',
     url: 'aHR0cHM6Ly9yZWxlYXNlcy5tb2U=',
     options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['seadex'], default: 'seadex' } }
   },
@@ -39,7 +39,7 @@ export const EXTENSIONS = [
     description: 'Paginated anime torrent searches, including older releases.',
     id: 'catapulttv.hayase.nyaa',
     accuracy: 'low',
-    icon: 'https://nyaa.si/static/favicon.png',
+    icon: 'https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/assets/icons/nyaa.svg',
     url: 'aHR0cHM6Ly9ueWFhLnNp',
     options: {
       provider: { type: 'select', description: 'Provider used by this extension.', values: ['nyaa'], default: 'nyaa' },
@@ -54,7 +54,7 @@ export const EXTENSIONS = [
     description: 'Paginated searches on Sukebei Nyaa.',
     id: 'catapulttv.hayase.sukebei',
     accuracy: 'low',
-    icon: 'https://sukebei.nyaa.si/static/favicon.png',
+    icon: 'https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/assets/icons/sukebei.svg',
     url: 'aHR0cHM6Ly9zdWtlYmVpLm55YWEuc2k=',
     options: {
       provider: { type: 'select', description: 'Provider used by this extension.', values: ['sukebei'], default: 'sukebei' },
@@ -69,7 +69,7 @@ export const EXTENSIONS = [
     description: 'Anime torrent searches through the apibay.org public API.',
     id: 'catapulttv.hayase.piratebay',
     accuracy: 'low',
-    icon: 'https://thepiratebay.org/favicon.ico',
+    icon: 'https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/assets/icons/piratebay.svg',
     url: 'aHR0cHM6Ly9hcGliYXkub3Jn',
     options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['piratebay'], default: 'piratebay' } }
   },
@@ -78,8 +78,8 @@ export const EXTENSIONS = [
     name: 'SubsPlease',
     description: 'Trusted weekly anime releases from the SubsPlease API.',
     id: 'catapulttv.hayase.subsplease',
-    accuracy: 'high',
-    icon: 'https://subsplease.org/favicon.ico',
+    accuracy: 'medium',
+    icon: 'https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/assets/icons/subsplease.svg',
     url: 'aHR0cHM6Ly9zdWJzcGxlYXNlLm9yZw==',
     options: { provider: { type: 'select', description: 'Provider used by this extension.', values: ['subsplease'], default: 'subsplease' } }
   }
