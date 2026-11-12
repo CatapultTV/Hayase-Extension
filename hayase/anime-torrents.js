@@ -247,7 +247,7 @@ function parseNyaaHtml(html, mode, query = {}) {
       _remake: remake
     }
     if (viewId) result.id = Number(viewId)
-    if (mode === 'batch' && (files.length > 1 || isBatchTitle(searchableText))) result.type = 'batch'
+    if (mode === 'batch' && isBatchTitle(title)) result.type = 'batch'
     results.push(result)
   }
   return results
@@ -557,7 +557,7 @@ function parseSeaDexTorrent(torrent, query, mode) {
     date: validDate(torrent.created || torrent.updated),
     accuracy: 'high'
   }
-  if (mode === 'batch' && isBatchTitle(title)) result.type = 'batch'
+  if (mode === 'batch' && (files.length > 1 || isBatchTitle(searchableText))) result.type = 'batch'
   else if (torrent.isBest === true) result.type = 'best'
   else if (torrent.isBest === false) result.type = 'alt'
   return result
