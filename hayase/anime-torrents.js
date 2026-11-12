@@ -151,7 +151,7 @@ function resolutionMatches(text, resolution) {
 }
 
 function isEpisodeTitle(title) {
-  return /\bS\d{1,2}E\d{1,3}\b|\bepisode[ ._-]*\d{1,3}\b|\s-\s\d{1,3}(?:v\d)?(?=\s|$|\.|\[)/i.test(title)
+  return /\bS\d{1,2}E\d{1,3}\b|\bepisode[ ._-]*\d{1,3}\b|(?:^|[\s._-])\d{1,3}(?:v\d)?(?=\s|$|\.|\[)/i.test(title)
 }
 
 function isBatchTitle(title) {
