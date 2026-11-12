@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#10172f"/><stop offset=".55" stop-color="#28205d"/><stop offset="1" stop-color="#087e91"/></linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="#fff" opacity=".13"/></pattern>
+  </defs>
+  <rect width="1200" height="320" rx="28" fill="url(#bg)"/><rect width="1200" height="320" rx="28" fill="url(#dots)"/>
+  <circle cx="1010" cy="40" r="220" fill="#22d3ee" opacity=".08"/><circle cx="1080" cy="300" r="210" fill="#a78bfa" opacity=".10"/>
+  <g transform="translate(72 74)"><rect width="112" height="112" rx="30" fill="#fff" opacity=".10" stroke="#fff" stroke-opacity=".25"/><path d="M31 27h50a9 9 0 0 1 9 9v40a9 9 0 0 1-9 9H31a9 9 0 0 1-9-9V36a9 9 0 0 1 9-9Z" fill="url(#glow)"/><path d="m48 43 27 13-27 14Z" fill="#111827"/></g>
+  <text x="220" y="122" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="48" font-weight="800" letter-spacing="-1">CATAPULT<tspan fill="#67e8f9">TV</tspan></text>
+  <text x="220" y="177" fill="#e0e7ff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="31" font-weight="650">HAYASE EXTENSIONS</text>
+  <text x="222" y="221" fill="#cbd5e1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="19">More sources. Cleaner matches. Better releases.</text>
+  <g transform="translate(820 94)" fill="none" stroke="url(#glow)" stroke-width="3">
+    <rect x="0" y="0" width="72" height="72" rx="18"/><rect x="91" y="0" width="72" height="72" rx="18" opacity=".75"/><rect x="182" y="0" width="72" height="72" rx="18" opacity=".5"/>
+    <path d="M22 36h28M36 22v28M113 24h28v24h-28zM204 36h28" stroke-linecap="round"/>
+  </g>
+  <text x="820" y="205" fill="#c7d2fe" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="16" letter-spacing="3">FIVE INDEPENDENT SOURCES</text>
+</svg>
