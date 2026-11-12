@@ -24,6 +24,7 @@ const pageOne = '<html><table id="torrent-list"><tbody>' +
   row({ title: '[Group] One Piece - 04 [1080p]', hash: HASH_EPISODE, id: 123 }) +
   row({ title: '[Group] One Piece 01-12 [BATCH] [1080p]', hash: HASH_BATCH, id: 456 }) +
   row({ title: '[Group] One Piece Film Red [1080p]', hash: HASH_MOVIE, id: 789 }) +
+  row({ title: '[OtherGroup] Dragon Ball - 04 [1080p]', hash: 'cccccccccccccccccccccccccccccccccccccccc', id: 790 }) +
   '</tbody></table></html>'
 const pageTwo = '<html><table id="torrent-list"><tbody>' +
   row({ title: '[OldGroup] One Piece - 04 [720p]', hash: HASH_OLD, id: 111, date: 1400000000, size: '700 MiB' }) +
@@ -90,6 +91,7 @@ test('Nyaa HTML parser extracts torrent metadata and matches episode', () => {
   assert.equal(results[0].downloads, 45)
   assert.equal(results[0].size, Math.round(1.5 * 1024 ** 3))
   assert.equal(results[0].date.getTime(), 1794343216 * 1000)
+  assert.ok(results.every((result) => result.title.includes('One Piece')))
 })
 
 test('Nyaa pagination searches older pages instead of stopping at recent results', async () => {
@@ -162,9 +164,20 @@ test('SubsPlease parses its curated API and converts base32 hashes', async () =>
   const results = await __testing.providers.subsplease.search({ ...query, fetch }, 'single')
   assert.equal(results.length, 1)
   assert.equal(results[0].hash, '0'.repeat(40))
-  assert.equal(results[0].accuracy, 'high')
+  assert.equal(results[0].accuracy, 'medium')
   assert.equal(results[0]._trusted, true)
   assert.match(results[0].title, /SubsPlease.*1080p/)
+})
+
+test('Series matching rejects unrelated titles and tolerates punctuation and Unicode aliases', () => {
+  assert.equal(__testing.seriesTitleMatches('[Group] One.Piece - 04 [1080p]', query), true)
+  assert.equal(__testing.seriesTitleMatches('[Group] Dragon Ball - 04 [1080p]', query), false)
+  assert.equal(__testing.seriesTitleMatches('[Group] ワンピース 第04話', query), true)
+})
+
+test('Single episode matching rejects batch releases and similarly numbered episodes', () => {
+  assert.equal(__testing.episodeMatches('[Group] One Piece - 104 [1080p]', query), false)
+  assert.equal(__testing.isBatchTitle('[Group] One Piece S01 Complete'), true)
 })
 
 test('64-character v2 hashes use a BitTorrent v2 magnet topic', () => {
@@ -197,7 +210,7 @@ test('Generated magnets include public trackers for peer discovery', () => {
   assert.ok(magnet.includes('tr=udp%3A%2F%2Ftracker.opentrackr.org'))
 })
 
-test('Generated manifest includes all four providers and pagination settings', async () => {
+test('Generated manifest uses repository-hosted provider icons and honest accuracy ratings', async () => {
   const index = buildIndex()
   validateIndex(index)
   assert.equal(index.length, 5)
@@ -209,6 +222,8 @@ test('Generated manifest includes all four providers and pagination settings', a
     'catapulttv.hayase.subsplease'
   ])
   assert.equal(index[1].options.pages.default, '10')
+  assert.ok(index.every((entry) => entry.icon.startsWith('https://raw.githubusercontent.com/CatapultTV/Hayase-Extension/main/assets/icons/')))
+  assert.equal(index.find((entry) => entry.id === 'catapulttv.hayase.subsplease').accuracy, 'medium')
   const root = dirname(dirname(fileURLToPath(import.meta.url)))
   const actual = JSON.parse(await readFile(join(root, 'index.json'), 'utf8'))
   assert.deepEqual(actual, index)
