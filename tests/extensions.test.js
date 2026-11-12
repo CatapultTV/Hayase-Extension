@@ -102,10 +102,17 @@ test('Nyaa pagination searches older pages instead of stopping at recent results
   assert.equal(results.find((result) => result.hash === HASH_OLD).date.getTime(), 1400000000 * 1000)
 })
 
+test('Batch search includes individual episode torrents as well as multi-episode packs', () => {
+  const batch = __testing.parseNyaaHtml(pageOne, 'batch', query)
+  assert.deepEqual(new Set(batch.map((result) => result.hash)), new Set([HASH_EPISODE, HASH_BATCH]))
+  assert.equal(batch.find((result) => result.hash === HASH_BATCH).type, 'batch')
+  assert.equal(batch.find((result) => result.hash === HASH_EPISODE).type, undefined)
+})
+
 test('Nyaa batch and movie modes filter unrelated release types', () => {
   const batch = __testing.parseNyaaHtml(pageOne, 'batch', query)
-  assert.equal(batch.length, 1)
-  assert.equal(batch[0].hash, HASH_BATCH)
+  assert.equal(batch.length, 2)
+  assert.deepEqual(new Set(batch.map((result) => result.hash)), new Set([HASH_BATCH, HASH_EPISODE]))
   const movies = __testing.parseNyaaHtml(pageOne, 'movie', query)
   assert.equal(movies.length, 1)
   assert.equal(movies[0].hash, HASH_MOVIE)
@@ -194,6 +201,14 @@ test('Nyaa searches are ordered by seeders by default and can be switched to new
   assert.equal(newest.searchParams.get('s'), 'id')
 })
 
+test('Seeders rank releases ahead of resolution and codec quality when confidence is equal', () => {
+  const results = __testing.mergeResults([
+    { title: '[Group] One Piece 1080p BluRay', hash: HASH_EPISODE, seeders: 3, accuracy: 'low' },
+    { title: '[Group] One Piece 720p WEBRip', hash: HASH_BATCH, seeders: 250, accuracy: 'low' }
+  ])
+  assert.deepEqual(results.map((result) => result.hash), [HASH_BATCH, HASH_EPISODE])
+})
+
 test('Quality ranking prioritises curated and trusted releases before raw swarm size', () => {
   const results = __testing.mergeResults([
     { title: '[Group] One Piece 1080p WEBRip', hash: HASH_EPISODE, seeders: 900, date: new Date('2026-11-10') },
@@ -201,7 +216,7 @@ test('Quality ranking prioritises curated and trusted releases before raw swarm 
     { title: '[SeaDex] One Piece 720p', hash: HASH_MOVIE, seeders: 0, type: 'best', date: new Date('2025-01-01') },
     { title: '[TrustedGroup] One Piece 1080p WEB-DL', hash: HASH_OLD, seeders: 2, _trusted: true, date: new Date('2026-01-01') }
   ], '1080')
-  assert.deepEqual(results.map((result) => result.hash), [HASH_MOVIE, HASH_OLD, HASH_BATCH, HASH_EPISODE])
+  assert.deepEqual(results.map((result) => result.hash), [HASH_MOVIE, HASH_OLD, HASH_EPISODE, HASH_BATCH])
   assert.ok(results.every((result) => !('_trusted' in result) && !('_remake' in result)))
 })
 
