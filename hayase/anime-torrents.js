@@ -164,8 +164,6 @@ function nyaaQuery(title, query, mode) {
   if (mode === 'single') {
     const episode = requestedEpisodes(query)[0]
     if (episode !== undefined) parts.push(String(episode).padStart(2, '0'))
-  } else if (mode === 'batch') {
-    parts.push('batch')
   } else if (mode === 'movie') {
     parts.push('movie')
   }
@@ -224,7 +222,7 @@ function parseNyaaHtml(html, mode, query = {}) {
     } catch {}
     if (!title || !hash || excluded(title, query.exclusions) || !seriesTitleMatches(title, query)) continue
     if (mode === 'single' && (isBatchTitle(title) || !episodeMatches(title, query))) continue
-    if (mode === 'batch' && !isBatchTitle(title)) continue
+    if (mode === 'batch' && !isBatchTitle(title) && !isEpisodeTitle(title)) continue
     if (mode === 'movie' && (isBatchTitle(title) || isEpisodeTitle(title))) continue
     if (!resolutionMatches(title, query.resolution)) continue
 
@@ -249,7 +247,7 @@ function parseNyaaHtml(html, mode, query = {}) {
       _remake: remake
     }
     if (viewId) result.id = Number(viewId)
-    if (mode === 'batch') result.type = 'batch'
+    if (mode === 'batch' && isBatchTitle(title)) result.type = 'batch'
     results.push(result)
   }
   return results
@@ -279,7 +277,7 @@ function parseNyaaFeed(xml, mode, query = {}) {
     const link = directTorrentLink(xmlField(item, 'link'))
     if (!title || !hash || excluded(title, query.exclusions) || !seriesTitleMatches(title, query)) continue
     if (mode === 'single' && (isBatchTitle(title) || !episodeMatches(title, query))) continue
-    if (mode === 'batch' && !isBatchTitle(title)) continue
+    if (mode === 'batch' && !isBatchTitle(title) && !isEpisodeTitle(title)) continue
     if (mode === 'movie' && (isBatchTitle(title) || isEpisodeTitle(title))) continue
     if (!resolutionMatches(title, query.resolution)) continue
 
@@ -295,7 +293,7 @@ function parseNyaaFeed(xml, mode, query = {}) {
       accuracy: 'low'
     }
     if (Number.isInteger(id)) result.id = id
-    if (mode === 'batch') result.type = 'batch'
+    if (mode === 'batch' && isBatchTitle(title)) result.type = 'batch'
     results.push(result)
   }
   return results
@@ -355,7 +353,7 @@ function parseApiBayResponse(payload, mode, query = {}) {
     const hash = validHash(torrent?.info_hash)
     if (!title || !hash || String(torrent.id) === '0' || excluded(title, query.exclusions) || !seriesTitleMatches(title, query)) continue
     if (mode === 'single' && (isBatchTitle(title) || !episodeMatches(title, query))) continue
-    if (mode === 'batch' && !isBatchTitle(title)) continue
+    if (mode === 'batch' && !isBatchTitle(title) && !isEpisodeTitle(title)) continue
     if (mode === 'movie' && (isBatchTitle(title) || isEpisodeTitle(title))) continue
     if (!resolutionMatches(title, query.resolution)) continue
     const added = Number(torrent.added)
@@ -447,7 +445,7 @@ function parseSubsPleaseResponse(payload, query, mode) {
     if (!seriesTitleMatches(show, query)) continue
 
     const isBatch = String(item.episode).toLowerCase() === 'batch'
-    if (mode === 'batch' && !isBatch) continue
+    if (mode === 'batch' && !isBatch && !Number.isFinite(Number(item.episode))) continue
     if (mode === 'single') {
       if (isBatch) continue
       const episode = Number(item.episode)
@@ -541,13 +539,9 @@ function parseSeaDexTorrent(torrent, query, mode) {
     if (!files.length || !files.some((file) => episodeMatches(file.name, query))) return null
   }
   if (mode === 'movie' && (isBatchTitle(searchableText) || fileNames.some(isEpisodeTitle))) return null
-  if (mode === 'batch') {
+  if (mode === 'batch' && files.length > 1) {
     const expectedCount = Number(query.episodeCount)
-    if (Number.isInteger(expectedCount) && expectedCount > 1 && files.length > 0) {
-      if (files.length < expectedCount) return null
-    } else if (files.length <= 1 && !isBatchTitle(searchableText)) {
-      return null
-    }
+    if (Number.isInteger(expectedCount) && expectedCount > 1 && files.length < expectedCount && !isBatchTitle(searchableText)) return null
   }
 
   const size = files.reduce((total, file) => total + file.length, 0)
@@ -563,7 +557,7 @@ function parseSeaDexTorrent(torrent, query, mode) {
     date: validDate(torrent.created || torrent.updated),
     accuracy: 'high'
   }
-  if (mode === 'batch') result.type = 'batch'
+  if (mode === 'batch' && isBatchTitle(title)) result.type = 'batch'
   else if (torrent.isBest === true) result.type = 'best'
   else if (torrent.isBest === false) result.type = 'alt'
   return result
@@ -634,6 +628,9 @@ function compareResults(a, b, preferredResolution = '') {
   const bTrusted = b._trusted ? 1 : 0
   if (aTrusted !== bTrusted) return bTrusted - aTrusted
 
+  const seeders = (Number(b.seeders) || 0) - (Number(a.seeders) || 0)
+  if (seeders) return seeders
+
   const aRemake = a._remake ? 1 : 0
   const bRemake = b._remake ? 1 : 0
   if (aRemake !== bRemake) return aRemake - bRemake
@@ -643,9 +640,6 @@ function compareResults(a, b, preferredResolution = '') {
 
   const quality = releaseQualityRank(b.title) - releaseQualityRank(a.title)
   if (quality) return quality
-
-  const seeders = (Number(b.seeders) || 0) - (Number(a.seeders) || 0)
-  if (seeders) return seeders
 
   return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0)
 }
